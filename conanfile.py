@@ -43,7 +43,11 @@ class BoostConan(ConanFile):
             return
 
         command = "bootstrap" if platform.system() == "Windows" else "./bootstrap.sh"
-        self.run("cd %s && %s" % (self.FOLDER_NAME, command))
+        try:
+            self.run("cd %s && %s" % (self.FOLDER_NAME, command))
+        except:
+            self.run("cat bootstrap.log")
+            raise
 
         flags = []
         if self.settings.compiler == "Visual Studio":
