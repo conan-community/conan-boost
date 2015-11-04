@@ -4,14 +4,6 @@ import platform, os
 
 
 class BoostConan(ConanFile):
-    # Ubuntu: sudo apt-get install g++-4.8-multilib
-    # Debian: sudo apt-get install libbz2-dev
-    # Debian: sudo apt-get install gcc-4.9-multilib g++-4.9-multilib
-    # Debian (for x86 packages):
-    #    sudo dpkg --add-architecture i386
-    #    sudo apt-get update
-    #    sudo apt-get install libbz2-dev:i386
-    #
     name = "Boost"
     version = "1.59.0" 
     
@@ -22,6 +14,15 @@ class BoostConan(ConanFile):
     default_options = "shared=True", "header_only=False"
     counter_config = 0
     
+    def system_requirements(self):
+        if not self.options.header_only and self.settings.os == "Linux": # Fixme, just debian based works for building
+            self.run("sudo apt-get install libbz2-dev || true")
+            self.run("sudo apt-get install gcc-%s-multilib || true" % self.settings.compiler.version)
+            self.run("sudo apt-get install g++-%s-multilib || true" % self.settings.compiler.version)
+            self.run("sudo dpkg --add-architecture i386 || true")
+            self.run("sudo apt-get update || true")
+            self.run("sudo apt-get install libbz2-dev:i386 || true")
+   
     def config(self):
         # If header only, the compiler, etc, does not affect the package!
         self.counter_config += 1
