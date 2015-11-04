@@ -15,7 +15,7 @@ class BoostConan(ConanFile):
     counter_config = 0
     
     def system_requirements(self):
-        if not self.options.header_only and self.settings.os == "Linux": # Fixme, just debian based works for building
+        if self.settings.os == "Linux": # Fixme, just debian based works for building
             self.run("sudo apt-get install libbz2-dev || true")
             self.run("sudo apt-get install gcc-%s-multilib || true" % self.settings.compiler.version)
             self.run("sudo apt-get install g++-%s-multilib || true" % self.settings.compiler.version)
