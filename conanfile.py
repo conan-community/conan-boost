@@ -20,14 +20,16 @@ class BoostConan(ConanFile):
     ZIP_NAME = "%s.tar.gz" % FOLDER_NAME 
     options = {"shared": [True, False], "header_only": [True, False]}
     default_options = "shared=True", "header_only=False"
-
+    counter_config = 0
+    
     def config(self):
         # If header only, the compiler, etc, does not affect the package!
-        # RECURRENT PROBLEM!! premature evaluation
-#         if self.options.header_only:
-#             self.settings.clear()
-#             self.options.remove("shared")
-        pass
+        self.counter_config += 1
+        # config is called twice, one before receive the upper dependencies and another before
+        if self.options.header_only and self.counter_config==2:
+            self.output.info("HEADER ONLY")
+            self.settings.clear()
+            self.options.remove("shared")
 
     def source(self):
         url = "http://sourceforge.net/projects/boost/files/boost/%s/%s/download" % (self.version, self.ZIP_NAME)
@@ -70,5 +72,5 @@ class BoostConan(ConanFile):
                 "math_tr1f math_tr1l prg_exec_monitor program_options random regex serialization "
                 "signals system test_exec_monitor thread timer unit_test_framework wave "
                 "wserialization").split()
-        if self.settings.os != "Windows":
+        if not self.options.header_only and self.settings.os != "Windows":
             self.cpp_info.libs.extend(["boost_%s" % lib for lib in libs])

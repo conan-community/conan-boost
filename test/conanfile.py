@@ -10,9 +10,16 @@ class DefaultNameConan(ConanFile):
     requires = "Boost/1.59.0@lasote/stable"
     generators = "cmake"
 
+    def config(self):
+        # If header only, the compiler, etc, does not affect the package!
+        # RECURRENT PROBLEM!! premature evaluation
+        if self.options["Boost"].header_only:
+            self.settings.clear()
+
     def build(self):
         cmake = CMake(self.settings)
-        self.run('cmake . %s' % cmake.command_line)
+        header_only = "ON" if self.options["Boost"].header_only else "OFF"
+        self.run('cmake . %s -DHEADER_ONLY=%s' % (cmake.command_line, header_only))
         self.run("cmake --build . %s" % cmake.build_config)
 
     def imports(self):
