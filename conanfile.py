@@ -42,11 +42,11 @@ class BoostConan(ConanFile):
         if self.options.header_only:
             return
 
-        command = "bootstrap" if platform.system() == "Windows" else "./bootstrap.sh"
+        command = "bootstrap" if self.settings.os == "Windows" else "./bootstrap.sh"
         try:
             self.run("cd %s && %s" % (self.FOLDER_NAME, command))
         except:
-            self.run("cat bootstrap.log")
+            self.run("cd %s && type bootstrap.log" if self.settings.os == "Windows" else "cd %s && cat bootstrap.sh")
             raise
 
         flags = []

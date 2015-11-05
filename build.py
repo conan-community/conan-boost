@@ -15,26 +15,19 @@ if __name__ == "__main__":
 
 
     if platform.system() == "Windows":
-        if len(sys.argv) != 2 or sys.argv[1] not in ["x86", "x86_64"]:
-            print("Please, specify x86 or x86_64 as a parameter")
-            exit()
-
-        arch = sys.argv[1]
-        print("Verify that you are running a %s visual console" % arch)
-        raw_input("Press Enter to continue...")
 
         compiler = '-s compiler="Visual Studio" -s compiler.version=12 '
         # Static
-        test(compiler + '-s arch='+arch+' -s build_type=Debug -s compiler.runtime=MDd -o OpenSSL:shared=False')
-        test(compiler + '-s arch='+arch+' -s build_type=Debug -s compiler.runtime=MTd -o OpenSSL:shared=False')
-        test(compiler + '-s arch='+arch+' -s build_type=Release -s compiler.runtime=MD -o OpenSSL:shared=False')
-        test(compiler + '-s arch='+arch+' -s build_type=Release -s compiler.runtime=MT -o OpenSSL:shared=False')
+        test(compiler + '-s arch=x86_64 -s build_type=Debug -s compiler.runtime=MDd -o Boost:shared=False')
+        test(compiler + '-s arch=x86_64 -s build_type=Debug -s compiler.runtime=MTd -o Boost:shared=False')
+        test(compiler + '-s arch=x86_64 -s build_type=Release -s compiler.runtime=MD -o Boost:shared=False')
+        test(compiler + '-s arch=x86_64 -s build_type=Release -s compiler.runtime=MT -o Boost:shared=False')
 
         # Shared
-        test(compiler + '-s arch='+arch+' -s build_type=Debug -s compiler.runtime=MDd -o OpenSSL:shared=True')
-        test(compiler + '-s arch='+arch+' -s build_type=Debug -s compiler.runtime=MTd -o OpenSSL:shared=True')
-        test(compiler + '-s arch='+arch+' -s build_type=Release -s compiler.runtime=MD -o OpenSSL:shared=True')
-        test(compiler + '-s arch='+arch+' -s build_type=Release -s compiler.runtime=MT -o OpenSSL:shared=True')
+        test(compiler + '-s arch=x86 -s build_type=Debug -s compiler.runtime=MDd -o Boost:shared=True')
+        test(compiler + '-s arch=x86 -s build_type=Debug -s compiler.runtime=MTd -o Boost:shared=True')
+        test(compiler + '-s arch=x86 -s build_type=Release -s compiler.runtime=MD -o Boost:shared=True')
+        test(compiler + '-s arch=x86 -s build_type=Release -s compiler.runtime=MT -o Boost:shared=True')
 
     else:  # Compiler and version not specified, please set it in your home/.conan/conan.conf (Valid for Macos and Linux)
         if not os.getenv("TRAVIS", False):   
