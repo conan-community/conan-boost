@@ -1,6 +1,6 @@
 from conans import ConanFile
 from conans import tools
-import platform, os
+import platform, os, sys
 
 
 class BoostConan(ConanFile):
@@ -30,11 +30,11 @@ class BoostConan(ConanFile):
             self.output.info("HEADER ONLY")
             self.settings.clear()
             self.options.remove("shared")
-        if self.options.shared and "MT" in str(self.settings.compiler.runtime):
+        if not self.options.header_only and self.settings.os == "Windows" and self.options.shared and "MT" in str(self.settings.compiler.runtime):
             self.options.shared = False
 
     def source(self):
-        zip_name = "%s.zip" % self.FOLDER_NAME if self.settings.os == "Windows" else "%s.tar.gz" % self.FOLDER_NAME
+        zip_name = "%s.zip" % self.FOLDER_NAME if sys.platform == "win32" else "%s.tar.gz" % self.FOLDER_NAME
         url = "http://sourceforge.net/projects/boost/files/boost/%s/%s/download" % (self.version, zip_name)
         tools.download(url, zip_name)
         tools.unzip(zip_name, ".")
