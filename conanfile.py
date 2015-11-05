@@ -8,14 +8,13 @@ class BoostConan(ConanFile):
     version = "1.59.0" 
     
     settings = "os", "arch", "compiler", "build_type"   
-    FOLDER_NAME = "boost_%s" % version.replace(".", "_")
-    ZIP_NAME = "%s.tar.gz" % FOLDER_NAME 
+    FOLDER_NAME = "boost_%s" % version.replace(".", "_") 
     options = {"shared": [True, False], "header_only": [True, False]}
     default_options = "shared=True", "header_only=False"
     counter_config = 0
     
     def system_requirements(self):
-        if self.settings.os == "Linux": # Fixme, just debian based works for building
+        if not self.options.header_only and self.settings.os == "Linux": # Fixme, just debian based works for building
             self.run("sudo apt-get install libbz2-dev || true")
             self.run("sudo apt-get install gcc-%s-multilib || true" % self.settings.compiler.version)
             self.run("sudo apt-get install g++-%s-multilib || true" % self.settings.compiler.version)
@@ -31,12 +30,15 @@ class BoostConan(ConanFile):
             self.output.info("HEADER ONLY")
             self.settings.clear()
             self.options.remove("shared")
+        if self.options.shared and "MT" in str(self.settings.compiler.runtime):
+            self.options.shared = False
 
     def source(self):
-        url = "http://sourceforge.net/projects/boost/files/boost/%s/%s/download" % (self.version, self.ZIP_NAME)
-        tools.download(url, self.ZIP_NAME)
-        tools.unzip(self.ZIP_NAME, ".")
-        os.unlink(self.ZIP_NAME)
+        zip_name = "%s.zip" % self.FOLDER_NAME if self.settings.os == "Windows" else "%s.tar.gz" % self.FOLDER_NAME
+        url = "http://sourceforge.net/projects/boost/files/boost/%s/%s/download" % (self.version, zip_name)
+        tools.download(url, zip_name)
+        tools.unzip(zip_name, ".")
+        os.unlink(zip_name)
 
     def build(self):
         if self.options.header_only:
@@ -55,19 +57,23 @@ class BoostConan(ConanFile):
 
         flags.append("link=%s" % ("static" if not self.options.shared else "shared"))
         if self.settings.compiler == "Visual Studio" and self.settings.compiler.runtime:
-            flags.append("runtime-link=%s" % ("static" if "MT" in self.settings.compiler.runtime else "shared"))
+            flags.append("runtime-link=%s" % ("static" if "MT" in str(self.settings.compiler.runtime) else "shared"))
         flags.append("variant=%s" % str(self.settings.build_type).lower())
         flags.append("address-model=%s" % ("32" if self.settings.arch == "x86" else "64"))
         b2_flags = " ".join(flags)
 
         command = "b2" if self.settings.os == "Windows" else "./b2"
-        self.run("cd %s && %s %s -j4 --abbreviate-paths --without-python"
-                 % (self.FOLDER_NAME, command, b2_flags))
+        full_command = "cd %s && %s %s -j4 --abbreviate-paths --without-python" % (self.FOLDER_NAME, command, b2_flags)
+        self.output.warn(full_command)
+        self.run(full_command)
 
     def package(self):
         self.copy(pattern="*", dst="include/boost", src="%s/boost" % self.FOLDER_NAME)
-        self.copy(pattern="*", dst="lib", src="%s/stage/lib" % self.FOLDER_NAME)
-
+        self.copy(pattern="*.so.*", dst="lib", src="%s/stage/lib" % self.FOLDER_NAME)
+        self.copy(pattern="*.dylib*", dst="lib", src="%s/stage/lib" % self.FOLDER_NAME)
+        self.copy(pattern="*.lib", dst="lib", src="%s/stage/lib" % self.FOLDER_NAME)
+        self.copy(pattern="*.dll", dst="bin", src="%s/stage/lib" % self.FOLDER_NAME)
+        
     def package_info(self):
         if not self.options.header_only and self.options.shared:
             self.cpp_info.defines.append("BOOST_DYN_LINK")
