@@ -5,22 +5,13 @@ import platform, os, sys
 
 class BoostConan(ConanFile):
     name = "Boost"
-    version = "1.59.0" 
+    version = "1.58.0" 
     
     settings = "os", "arch", "compiler", "build_type"   
     FOLDER_NAME = "boost_%s" % version.replace(".", "_") 
     options = {"shared": [True, False], "header_only": [True, False]}
     default_options = "shared=True", "header_only=False"
     counter_config = 0
-    
-    def system_requirements(self):
-        if not self.options.header_only and self.settings.os == "Linux": # Fixme, just debian based works for building
-            self.run("sudo apt-get install libbz2-dev || true")
-            self.run("sudo apt-get install gcc-%s-multilib || true" % self.settings.compiler.version)
-            self.run("sudo apt-get install g++-%s-multilib || true" % self.settings.compiler.version)
-            self.run("sudo dpkg --add-architecture i386 || true")
-            self.run("sudo apt-get update || true")
-            self.run("sudo apt-get install libbz2-dev:i386 || true")
    
     def config(self):
         # If header only, the compiler, etc, does not affect the package!
@@ -43,6 +34,14 @@ class BoostConan(ConanFile):
     def build(self):
         if self.options.header_only:
             return
+        
+        if self.settings.os == "Linux": # Fixme, just debian based works for building
+            self.run("sudo apt-get install libbz2-dev || true")
+            self.run("sudo apt-get install gcc-%s-multilib || true" % self.settings.compiler.version)
+            self.run("sudo apt-get install g++-%s-multilib || true" % self.settings.compiler.version)
+            self.run("sudo dpkg --add-architecture i386 || true")
+            self.run("sudo apt-get update || true")
+            self.run("sudo apt-get install libbz2-dev:i386 || true")
 
         command = "bootstrap" if self.settings.os == "Windows" else "./bootstrap.sh"
         try:

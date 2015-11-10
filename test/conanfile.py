@@ -7,7 +7,7 @@ class DefaultNameConan(ConanFile):
     name = "DefaultName"
     version = "0.1"
     settings = "os", "compiler", "arch", "build_type"
-    requires = "Boost/1.59.0@lasote/stable"
+    requires = "Boost/1.57.0@lasote/stable"
     generators = "cmake"
 
     def config(self):
