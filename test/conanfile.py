@@ -29,4 +29,4 @@ class DefaultNameConan(ConanFile):
     def test(self):
         self.run("cd bin && .%slambda < ../data.txt" % (os.sep))
         if not self.options["Boost"].header_only:
-            self.run("cd bin && .%sregex < ../data.txt" % (os.sep))
+            self.run("cd bin && .%sregex_exe < ../data.txt" % (os.sep))

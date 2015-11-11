@@ -6,7 +6,7 @@ CONAN_BASIC_SETUP()
 
 ADD_EXECUTABLE(lambda lambda.cpp)
 IF(NOT HEADER_ONLY)
-	ADD_EXECUTABLE(regex regex.cpp) # Uses autolinkingç
-	TARGET_LINK_LIBRARIES(regex ${CONAN_LIBS})
+	ADD_EXECUTABLE(regex_exe regex.cpp) # Uses autolinking
+	TARGET_LINK_LIBRARIES(regex_exe ${CONAN_LIBS})
 ENDIF()
 
