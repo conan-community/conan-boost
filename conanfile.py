@@ -77,8 +77,11 @@ class BoostConan(ConanFile):
         self.copy(pattern="*.dll", dst="bin", src="%s/stage/lib" % self.FOLDER_NAME)
         
     def package_info(self):
-        if not self.options.header_only and self.options.shared:
-            self.cpp_info.defines.append("BOOST_DYN_LINK")
+        if not self.options.header_only:
+            if self.options.shared:
+                self.cpp_info.defines.append("BOOST_ALL_DYN_LINK")
+            else:
+                self.cpp_info.defines.append("BOOST_USE_STATIC_LIBS")
 
         libs = ("atomic chrono container context coroutine date_time exception filesystem "
                 "graph iostreams locale log_setup log math_c99 math_c99f math_c99l math_tr1 "
@@ -88,6 +91,7 @@ class BoostConan(ConanFile):
         if not self.options.header_only and self.settings.os != "Windows":
             self.cpp_info.libs.extend(["boost_%s" % lib for lib in libs])
         elif self.settings.os == "Windows":
+            win_libs = []
             # http://www.boost.org/doc/libs/1_55_0/more/getting_started/windows.html
             visual_version = int(str(self.settings.compiler.version)) * 10
             runtime = "mt"# str(self.settings.compiler.runtime).lower()
@@ -104,7 +108,11 @@ class BoostConan(ConanFile):
             version = "_".join(self.version.split(".")[0:2])
             suffix = "vc%d-%s%s-%s" %  (visual_version, runtime, abi_tags, version)
             prefix = "lib" if not self.options.shared else ""
-            self.cpp_info.libs.extend(["%sboost_%s-%s" % (prefix, lib, suffix) for lib in libs if lib not in ["exception", "test_exec_monitor"]])
-            self.cpp_info.libs.extend(["libboost_exception-%s" % suffix, "libboost_test_exec_monitor-%s" % suffix])
             
-
+            
+            win_libs.extend(["%sboost_%s-%s" % (prefix, lib, suffix) for lib in libs if lib not in ["exception", "test_exec_monitor"]])
+            win_libs.extend(["libboost_exception-%s" % suffix, "libboost_test_exec_monitor-%s" % suffix])
+            
+            #self.output.warn("EXPORTED BOOST LIBRARIES: %s" % win_libs)
+            self.cpp_info.libs.extend(win_libs)
+            self.cpp_info.defines.extend(["BOOST_ALL_NO_LIB"]) # DISABLES AUTO LINKING! NO SMART AND MAGIC DECISIONS THANKS!

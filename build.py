@@ -20,12 +20,19 @@ if __name__ == "__main__":
         # Shared
         test(compiler + '-s arch=x86 -s build_type=Debug -s compiler.runtime=MDd -o Boost:shared=True')
         test(compiler + '-s arch=x86 -s build_type=Release -s compiler.runtime=MD -o Boost:shared=True')
+        test(compiler + '-s arch=x86_64 -s build_type=Debug -s compiler.runtime=MDd -o Boost:shared=True')
+        test(compiler + '-s arch=x86_64 -s build_type=Release -s compiler.runtime=MD -o Boost:shared=True')
         
         # Static
         test(compiler + '-s arch=x86_64 -s build_type=Debug -s compiler.runtime=MDd -o Boost:shared=False')
         test(compiler + '-s arch=x86_64 -s build_type=Debug -s compiler.runtime=MTd -o Boost:shared=False')
         test(compiler + '-s arch=x86_64 -s build_type=Release -s compiler.runtime=MD -o Boost:shared=False')
         test(compiler + '-s arch=x86_64 -s build_type=Release -s compiler.runtime=MT -o Boost:shared=False')
+        
+        test(compiler + '-s arch=x86 -s build_type=Debug -s compiler.runtime=MDd -o Boost:shared=False')
+        test(compiler + '-s arch=x86 -s build_type=Debug -s compiler.runtime=MTd -o Boost:shared=False')
+        test(compiler + '-s arch=x86 -s build_type=Release -s compiler.runtime=MD -o Boost:shared=False')
+        test(compiler + '-s arch=x86 -s build_type=Release -s compiler.runtime=MT -o Boost:shared=False')
 
        
 
