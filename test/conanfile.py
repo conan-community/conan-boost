@@ -7,7 +7,7 @@ class DefaultNameConan(ConanFile):
     name = "DefaultName"
     version = "0.1"
     settings = "os", "compiler", "arch", "build_type"
-    requires = "Boost/1.57.0@lasote/stable"
+    requires = "Boost/1.58.0@lasote/stable"
     generators = "cmake"
 
     def config(self):
@@ -29,4 +29,4 @@ class DefaultNameConan(ConanFile):
     def test(self):
         self.run("cd bin && .%slambda < ../data.txt" % (os.sep))
         if not self.options["Boost"].header_only:
-            self.run("cd bin && .%sregex < ../data.txt" % (os.sep))
+            self.run("cd bin && .%sregex_exe < ../data.txt" % (os.sep))

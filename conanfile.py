@@ -27,6 +27,7 @@ class BoostConan(ConanFile):
     def source(self):
         zip_name = "%s.zip" % self.FOLDER_NAME if sys.platform == "win32" else "%s.tar.gz" % self.FOLDER_NAME
         url = "http://sourceforge.net/projects/boost/files/boost/%s/%s/download" % (self.version, zip_name)
+        self.output.info("Downloading %s..." % url)
         tools.download(url, zip_name)
         tools.unzip(zip_name, ".")
         os.unlink(zip_name)
@@ -69,7 +70,7 @@ class BoostConan(ConanFile):
     def package(self):
         self.copy(pattern="*", dst="include/boost", src="%s/boost" % self.FOLDER_NAME)
         self.copy(pattern="*.a", dst="lib", src="%s/stage/lib" % self.FOLDER_NAME)
-	self.copy(pattern="*.so", dst="lib", src="%s/stage/lib" % self.FOLDER_NAME)
+        self.copy(pattern="*.so", dst="lib", src="%s/stage/lib" % self.FOLDER_NAME)
         self.copy(pattern="*.so.*", dst="lib", src="%s/stage/lib" % self.FOLDER_NAME)
         self.copy(pattern="*.dylib*", dst="lib", src="%s/stage/lib" % self.FOLDER_NAME)
         self.copy(pattern="*.lib", dst="lib", src="%s/stage/lib" % self.FOLDER_NAME)
@@ -86,3 +87,24 @@ class BoostConan(ConanFile):
                 "wserialization").split()
         if not self.options.header_only and self.settings.os != "Windows":
             self.cpp_info.libs.extend(["boost_%s" % lib for lib in libs])
+        elif self.settings.os == "Windows":
+            # http://www.boost.org/doc/libs/1_55_0/more/getting_started/windows.html
+            visual_version = int(str(self.settings.compiler.version)) * 10
+            runtime = "mt"# str(self.settings.compiler.runtime).lower()
+            
+            abi_tags = []
+            if self.settings.compiler.runtime in ("MTd", "MT"):
+                abi_tags.append("s")
+            
+            if self.settings.build_type == "Debug":
+                abi_tags.append("gd")
+            
+            abi_tags = ("-%s" % "".join(abi_tags)) if abi_tags else ""
+            
+            version = "_".join(self.version.split(".")[0:2])
+            suffix = "vc%d-%s%s-%s" %  (visual_version, runtime, abi_tags, version)
+            prefix = "lib" if not self.options.shared else ""
+            self.cpp_info.libs.extend(["%sboost_%s-%s" % (prefix, lib, suffix) for lib in libs if lib not in ["exception", "test_exec_monitor"]])
+            self.cpp_info.libs.extend(["libboost_exception-%s" % suffix, "libboost_test_exec_monitor-%s" % suffix])
+            
+
