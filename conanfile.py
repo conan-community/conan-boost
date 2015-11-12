@@ -37,7 +37,8 @@ class BoostConan(ConanFile):
             return
         
         if self.settings.os == "Linux": # Fixme, just debian based works for building
-            self.run("sudo apt-get install libbz2-dev || true")
+            self.output.warn("Some libraries are needed for build Boost. Please enter sudo password if requested...")
+	    self.run("sudo apt-get install libbz2-dev || true")
             self.run("sudo apt-get install gcc-%s-multilib || true" % self.settings.compiler.version)
             self.run("sudo apt-get install g++-%s-multilib || true" % self.settings.compiler.version)
             self.run("sudo dpkg --add-architecture i386 || true")
