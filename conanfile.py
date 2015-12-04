@@ -12,6 +12,7 @@ class BoostConan(ConanFile):
     options = {"shared": [True, False], "header_only": [True, False]}
     default_options = "shared=True", "header_only=False"
     counter_config = 0
+    url="https://github.com/lasote/conan-boost"
    
     def config(self):
         # If header only, the compiler, etc, does not affect the package!
@@ -54,7 +55,7 @@ class BoostConan(ConanFile):
 
         flags = []
         if self.settings.compiler == "Visual Studio":
-            flags.append("toolset=msvc-12.0")
+            flags.append("toolset=msvc-%s.0" % self.settings.compiler.version)
 
         flags.append("link=%s" % ("static" if not self.options.shared else "shared"))
         if self.settings.compiler == "Visual Studio" and self.settings.compiler.runtime:
