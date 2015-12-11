@@ -18,8 +18,7 @@ class DefaultNameConan(ConanFile):
 
     def build(self):
         cmake = CMake(self.settings)
-        header_only = "ON" if self.options["Boost"].header_only else "OFF"
-        self.run('cmake . %s -DHEADER_ONLY=%s' % (cmake.command_line, header_only))
+        self.run('cmake . %s' % cmake.command_line)
         self.run("cmake --build . %s" % cmake.build_config)
 
     def imports(self):

@@ -11,22 +11,22 @@ IF(NOT Boost_FIND_COMPONENTS)
     endforeach()
 ENDIF()
 
-#get_cmake_property(_variableNames VARIABLES)
-#foreach (_variableName ${_variableNames})
-#    if(_variableName MATCHES "oost")
-#        message(STATUS "${_variableName}=${${_variableName}}")
-#    endif()
-#endforeach()
-
-
-SET(BOOST_ROOT ${CONAN_BOOST})
+SET(BOOST_ROOT ${CONAN_BOOST_ROOT})
 SET(BOOST_INCLUDEDIR ${CONAN_INCLUDE_DIRS_BOOST})
 SET(Boost_LIBRARY_DIR ${CONAN_LIB_DIRS_BOOST})
 SET(BOOST_LIBRARYDIR ${CONAN_LIB_DIRS_BOOST})
 SET(Boost_NO_SYSTEM_PATHS ON)
 SET(Boost_NO_BOOST_CMAKE ON)
 
+# READ conaninfo and detect HEADER ONLY
+FILE(READ ${CONAN_BOOST_ROOT}/conaninfo.txt CONANINFO_FILE) 
+IF(CONANINFO_FILE MATCHES "header_only=True")
+    MESSAGE(STATUS "DETECTED Boost HEADER ONLY PACKAGE")
+    SET(BOOST_HEADER_ONLY TRUE)
+    SET(Boost_FOUND TRUE)
+ENDIF()
 
+IF(NOT BOOST_HEADER_ONLY)
 #.rst:
 # FindBoost
 # ---------
@@ -1325,3 +1325,5 @@ list(REMOVE_DUPLICATES _Boost_COMPONENTS_SEARCHED)
 list(SORT _Boost_COMPONENTS_SEARCHED)
 set(_Boost_COMPONENTS_SEARCHED "${_Boost_COMPONENTS_SEARCHED}"
   CACHE INTERNAL "Components requested for this build tree.")
+  
+ENDIF() # END IF HEADER_ONLY
