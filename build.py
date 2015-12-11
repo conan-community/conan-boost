@@ -16,7 +16,7 @@ if __name__ == "__main__":
 
     if platform.system() == "Windows":
 
-        compiler = '-s compiler="Visual Studio" -s compiler.version=12 '
+        compiler = '-s compiler="Visual Studio" -s compiler.version=14 '
         # Shared
         test(compiler + '-s arch=x86 -s build_type=Debug -s compiler.runtime=MDd -o Boost:shared=True')
         test(compiler + '-s arch=x86 -s build_type=Release -s compiler.runtime=MD -o Boost:shared=True')

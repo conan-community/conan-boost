@@ -13,6 +13,7 @@ class BoostConan(ConanFile):
     default_options = "shared=True", "header_only=False"
     counter_config = 0
     url="https://github.com/lasote/conan-boost"
+    exports = ["FindBoost.cmake"]
    
     def config(self):
         # If header only, the compiler, etc, does not affect the package!
@@ -70,6 +71,9 @@ class BoostConan(ConanFile):
         self.run(full_command)
 
     def package(self):
+        # Copy findZLIB.cmake to package
+        self.copy("FindBoost.cmake", ".", ".")
+        
         self.copy(pattern="*", dst="include/boost", src="%s/boost" % self.FOLDER_NAME)
         self.copy(pattern="*.a", dst="lib", src="%s/stage/lib" % self.FOLDER_NAME)
         self.copy(pattern="*.so", dst="lib", src="%s/stage/lib" % self.FOLDER_NAME)
