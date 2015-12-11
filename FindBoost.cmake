@@ -1,5 +1,5 @@
 MESSAGE(STATUS "********* Conan FindBoost wrapper! **********")
-
+# SET(Boost_DEBUG 1)
 # SET(BOOST_ALL_MODULES atomic chrono container context coroutine date_time exception filesystem graph iostreams locale log_setup log math_c99 math_c99f math_c99l math_tr1 math_tr1f math_tr1l prg_exec_monitor program_options random regex serialization signals system test_exec_monitor thread timer unit_test_framework wave wserialization)
   SET(BOOST_ALL_MODULES atomic chrono container context coroutine date_time           filesystem graph iostreams locale log_setup log math_c99 math_c99f math_c99l math_tr1 math_tr1f math_tr1l prg_exec_monitor program_options random regex serialization signals system                   thread timer unit_test_framework wave wserialization)
 
@@ -7,7 +7,7 @@ IF(NOT Boost_FIND_COMPONENTS)
     SET(Boost_FIND_COMPONENTS ${BOOST_ALL_MODULES})
     SET(_Boost_COMPONENTS_SEARCHED ${BOOST_ALL_MODULES})
     foreach (module ${BOOST_ALL_MODULES})
-        SET(Boost_FIND_REQUIRED_${module} 1)
+       SET(Boost_FIND_REQUIRED_${module} 0) # Don't crash if not found
     endforeach()
 ENDIF()
 
@@ -24,6 +24,7 @@ IF(CONANINFO_FILE MATCHES "header_only=True")
     MESSAGE(STATUS "DETECTED Boost HEADER ONLY PACKAGE")
     SET(BOOST_HEADER_ONLY TRUE)
     SET(Boost_FOUND TRUE)
+    SET(BOOST_FOUND TRUE)
 ENDIF()
 
 IF(NOT BOOST_HEADER_ONLY)
@@ -1327,3 +1328,9 @@ set(_Boost_COMPONENTS_SEARCHED "${_Boost_COMPONENTS_SEARCHED}"
   CACHE INTERNAL "Components requested for this build tree.")
   
 ENDIF() # END IF HEADER_ONLY
+
+IF(NOT Boost_FOUND)
+    MESSAGE(STATUS "Native found didn't work, but don't worry! Setting Conan detected libraries")
+    SET(Boost_LIBRARIES ${CONAN_LIBS_BOOST})
+    SET(Boost_FOUND 1)
+ENDIF()
