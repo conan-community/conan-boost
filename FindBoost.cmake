@@ -27,6 +27,10 @@ IF(CONANINFO_FILE MATCHES "header_only=True")
     SET(BOOST_FOUND TRUE)
 ENDIF()
 
+IF(CONANINFO_FILE MATCHES "shared=False")
+    SET(Boost_USE_STATIC_LIBS TRUE) # Used for set prefix "lib" to the libraries name
+ENDIF()
+
 IF(NOT BOOST_HEADER_ONLY)
 #.rst:
 # FindBoost
@@ -1328,9 +1332,3 @@ set(_Boost_COMPONENTS_SEARCHED "${_Boost_COMPONENTS_SEARCHED}"
   CACHE INTERNAL "Components requested for this build tree.")
   
 ENDIF() # END IF HEADER_ONLY
-
-IF(NOT Boost_FOUND)
-    MESSAGE(STATUS "Native found didn't work, but don't worry! Setting Conan detected libraries")
-    SET(Boost_LIBRARIES ${CONAN_LIBS_BOOST})
-    SET(Boost_FOUND 1)
-ENDIF()
