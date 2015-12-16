@@ -40,18 +40,21 @@ class BoostConan(ConanFile):
         
         if self.settings.os == "Linux": # Fixme, just debian based works for building
             self.output.warn("Some libraries are needed for build Boost. Please enter sudo password if requested...")
-	    self.run("sudo apt-get install libbz2-dev || true")
-            self.run("sudo apt-get install gcc-%s-multilib || true" % self.settings.compiler.version)
-            self.run("sudo apt-get install g++-%s-multilib || true" % self.settings.compiler.version)
-            self.run("sudo dpkg --add-architecture i386 || true")
-            self.run("sudo apt-get update || true")
-            self.run("sudo apt-get install libbz2-dev:i386 || true")
+            self.run("sudo apt-get install -y g++-multilib gcc-multilib libbz2-dev || true")
+# For debian:
+#             self.run("sudo apt-get install -y gcc-%s-multilib || true" % self.settings.compiler.version)
+#             self.run("sudo apt-get install -y g++-%s-multilib || true" % self.settings.compiler.version)
+#             self.run("sudo dpkg --add-architecture i386 || true")
+#             self.run("sudo apt-get update || true")
+            self.run("sudo apt-get install -y libbz2-dev:i386 || true")
 
         command = "bootstrap" if self.settings.os == "Windows" else "./bootstrap.sh"
         try:
             self.run("cd %s && %s" % (self.FOLDER_NAME, command))
         except:
-            self.run("cd %s && type bootstrap.log" if self.settings.os == "Windows" else "cd %s && cat bootstrap.sh")
+            self.run("cd %s && type bootstrap.log" % self.FOLDER_NAME 
+                     if self.settings.os == "Windows"
+                     else "cd %s && cat bootstrap.log" % self.FOLDER_NAME)
             raise
 
         flags = []
