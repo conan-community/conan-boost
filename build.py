@@ -19,8 +19,8 @@ if __name__ == "__main__":
         for compiler_version in ("14", "12"):
             compiler = '-s compiler="Visual Studio" -s compiler.version=%s ' % compiler_version
             # Static
-            test(compiler + '-s arch=x86_64 -s build_type=Debug -s compiler.runtime=MDd -o Boost:shared=False')
             test(compiler + '-s arch=x86_64 -s build_type=Debug -s compiler.runtime=MTd -o Boost:shared=False')
+            test(compiler + '-s arch=x86_64 -s build_type=Debug -s compiler.runtime=MDd -o Boost:shared=False')
             test(compiler + '-s arch=x86_64 -s build_type=Release -s compiler.runtime=MD -o Boost:shared=False')
             test(compiler + '-s arch=x86_64 -s build_type=Release -s compiler.runtime=MT -o Boost:shared=False')
             
