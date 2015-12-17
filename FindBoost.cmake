@@ -1,5 +1,5 @@
 MESSAGE(STATUS "********* Conan FindBoost wrapper! **********")
-SET(Boost_DEBUG 1)
+# SET(Boost_DEBUG 1)
 # SET(BOOST_ALL_MODULES atomic chrono container context coroutine date_time exception filesystem graph iostreams locale log_setup log math_c99 math_c99f math_c99l math_tr1 math_tr1f math_tr1l prg_exec_monitor program_options random regex serialization signals system test_exec_monitor thread timer unit_test_framework wave wserialization)
   SET(BOOST_ALL_MODULES atomic chrono container context coroutine date_time           filesystem graph iostreams locale log_setup log math_c99 math_c99f math_c99l math_tr1 math_tr1f math_tr1l prg_exec_monitor program_options random regex serialization signals system                   thread timer unit_test_framework wave wserialization)
 
@@ -21,12 +21,14 @@ SET(Boost_NO_BOOST_CMAKE ON)
 # READ conaninfo and detect HEADER ONLY
 FILE(READ ${CONAN_BOOST_ROOT}/conaninfo.txt CONANINFO_FILE) 
 IF(WIN32)
+    # Appends "g"
     IF(CONANINFO_FILE MATCHES "compiler.runtime=MTd" OR CONANINFO_FILE MATCHES "compiler.runtime=MDd")
         SET(Boost_USE_DEBUG_RUNTIME ON)
     ELSE()
         SET(Boost_USE_DEBUG_RUNTIME OFF)
     ENDIF()
     
+    # Appends "s"
     IF(CONANINFO_FILE MATCHES "compiler.runtime=MT" OR CONANINFO_FILE MATCHES "compiler.runtime=MTd")
         SET(Boost_USE_STATIC_RUNTIME ON)
     ELSE()
@@ -36,11 +38,10 @@ IF(WIN32)
     MESSAGE("DEBUG RUNTIME: ${Boost_USE_DEBUG_RUNTIME}")
     MESSAGE("STATIC RUNTIME: ${Boost_USE_STATIC_RUNTIME}")
     
-    FILE(GLOB LIBS_WITH_PREFIX "${CONAN_LIB_DIRS_BOOST}/libboost*")
-
-    IF(LIBS_WITH_PREFIX)
-        SET("Setting lib prefix to libraries...")
+    IF(CONANINFO_FILE MATCHES "shared=False")
         SET(Boost_LIB_PREFIX "lib") # Removed in the original file
+    ELSE()
+        SET(Boost_LIB_PREFIX "")
     ENDIF()
 
 ENDIF()
