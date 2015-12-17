@@ -20,6 +20,14 @@ SET(Boost_NO_BOOST_CMAKE ON)
 
 # READ conaninfo and detect HEADER ONLY
 FILE(READ ${CONAN_BOOST_ROOT}/conaninfo.txt CONANINFO_FILE) 
+
+FILE(GLOB LIBS_WITH_PREFIX "${CONAN_LIB_DIRS_BOOST}/libboost*")
+
+IF(LIBS_WITH_PREFIX AND WIN32)
+    SET("Setting lib prefix to libraries...")
+    SET(Boost_LIB_PREFIX "lib") # Removed in the original file
+ENDIF()
+
 IF(CONANINFO_FILE MATCHES "header_only=True")
     MESSAGE(STATUS "DETECTED Boost HEADER ONLY PACKAGE")
     SET(BOOST_HEADER_ONLY TRUE)
@@ -27,9 +35,6 @@ IF(CONANINFO_FILE MATCHES "header_only=True")
     SET(BOOST_FOUND TRUE)
 ENDIF()
 
-IF(CONANINFO_FILE MATCHES "shared=False")
-    SET(Boost_USE_STATIC_LIBS TRUE) # Used for set prefix "lib" to the libraries name
-ENDIF()
 
 IF(NOT BOOST_HEADER_ONLY)
 #.rst:
@@ -814,11 +819,11 @@ endif()
 #  Prefix initialization
 # ------------------------------------------------------------------------
 
-set(Boost_LIB_PREFIX "")
-if ( (GHSMULTI AND Boost_USE_STATIC_LIBS) OR
-    (WIN32 AND Boost_USE_STATIC_LIBS AND NOT CYGWIN) )
-  set(Boost_LIB_PREFIX "lib")
-endif()
+# set(Boost_LIB_PREFIX "")
+# if ( (GHSMULTI AND Boost_USE_STATIC_LIBS) OR
+#    (WIN32 AND Boost_USE_STATIC_LIBS AND NOT CYGWIN) )
+#  set(Boost_LIB_PREFIX "lib")
+# endif()
 
 if ( NOT Boost_NAMESPACE )
   set(Boost_NAMESPACE "boost")

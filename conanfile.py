@@ -18,13 +18,22 @@ class BoostConan(ConanFile):
     def config(self):
         # If header only, the compiler, etc, does not affect the package!
         self.counter_config += 1
-        # config is called twice, one before receive the upper dependencies and another before
+        # config is called twice, one before receive the upper dependencies and another after
         if self.options.header_only and self.counter_config==2:
             self.output.info("HEADER ONLY")
             self.settings.clear()
             self.options.remove("shared")
         if not self.options.header_only and self.settings.os == "Windows" and self.options.shared and "MT" in str(self.settings.compiler.runtime):
             self.options.shared = False
+        
+        # BZIP2 
+        if not self.options.header_only and self.counter_config==2:
+            if self.settings.os == "Linux" or self.settings.os == "Macos":
+                self.requires.add("bzip2/1.0.6@lasote/stable", private=False)
+                self.options["bzip2/1.0.6"].shared = self.options.shared
+                
+            self.requires.add("zlib/1.2.8@lasote/stable", private=False)
+            self.options["zlib/1.2.8"].shared = self.options.shared
 
     def source(self):
         zip_name = "%s.zip" % self.FOLDER_NAME if sys.platform == "win32" else "%s.tar.gz" % self.FOLDER_NAME
@@ -38,16 +47,6 @@ class BoostConan(ConanFile):
         if self.options.header_only:
             return
         
-        if self.settings.os == "Linux": # Fixme, just debian based works for building
-            self.output.warn("Some libraries are needed for build Boost. Please enter sudo password if requested...")
-            self.run("sudo apt-get install -y g++-multilib gcc-multilib libbz2-dev || true")
-# For debian:
-#             self.run("sudo apt-get install -y gcc-%s-multilib || true" % self.settings.compiler.version)
-#             self.run("sudo apt-get install -y g++-%s-multilib || true" % self.settings.compiler.version)
-#             self.run("sudo dpkg --add-architecture i386 || true")
-#             self.run("sudo apt-get update || true")
-            self.run("sudo apt-get install -y libbz2-dev:i386 || true")
-
         command = "bootstrap" if self.settings.os == "Windows" else "./bootstrap.sh"
         try:
             self.run("cd %s && %s" % (self.FOLDER_NAME, command))
@@ -69,10 +68,30 @@ class BoostConan(ConanFile):
         b2_flags = " ".join(flags)
 
         command = "b2" if self.settings.os == "Windows" else "./b2"
-        full_command = "cd %s && %s %s -j4 --abbreviate-paths --without-python" % (self.FOLDER_NAME, command, b2_flags)
+        if self.settings.os == "Linux":
+            deps_options = self.prepare_deps_options()
+        else:
+            deps_options = ""
+            
+        full_command = "cd %s && %s %s -j4 --abbreviate-paths --without-python %s" % (self.FOLDER_NAME, command, b2_flags, deps_options)
         self.output.warn(full_command)
         self.run(full_command)
+        
+    def prepare_deps_options(self):
+        ret = ""
+        if "bzip2" in self.requires:
+            include_path = self.deps_cpp_info["bzip2"].include_paths[0]
+            lib_path = self.deps_cpp_info["bzip2"].lib_paths[0]
+            lib_name = self.deps_cpp_info["bzip2"].libs[0]
+            ret += "-s BZIP2_BINARY=%s -s BZIP2_INCLUDE=%s -s BZIP2_LIBPATH=%s" % (lib_name, include_path, lib_path)
+#    FIXME: I think ZLIB variables should be setted now as env variables. But compilation works anyway.
+#         if "zlib" in self.requires:
+#             include_path = self.deps_cpp_info["zlib"].include_paths[0]
+#             lib_path = self.deps_cpp_info["zlib"].lib_paths[0]
+#             lib_name = self.deps_cpp_info["zlib"].libs[0]
+#             ret += "-s ZLIB_BINARY=%s -s ZLIB_INCLUDE=%s -s ZLIB_LIBPATH=%s" % (lib_name, include_path, lib_path)
 
+        return ret
     def package(self):
         # Copy findZLIB.cmake to package
         self.copy("FindBoost.cmake", ".", ".")
@@ -97,8 +116,8 @@ class BoostConan(ConanFile):
                     "math_tr1f math_tr1l prg_exec_monitor program_options random regex serialization "
                     "signals system test_exec_monitor thread timer unit_test_framework wave "
                     "wserialization").split()
-
-	    if self.settings.os != "Windows":
+            
+            if self.settings.os != "Windows":
                 self.cpp_info.libs.extend(["boost_%s" % lib for lib in libs])
             elif self.settings.os == "Windows":
                 win_libs = []

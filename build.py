@@ -36,11 +36,18 @@ if __name__ == "__main__":
             test(compiler + '-s arch=x86_64 -s build_type=Release -s compiler.runtime=MD -o Boost:shared=True')
 
     else:  # Compiler and version not specified, please set it in your home/.conan/conan.conf (Valid for Macos and Linux)
+
         
-        # HEADER ONLY
-        test('-o Boost:header_only=True')
-        
-	# Static x86_64
+        if not platform.system() == "Darwin" and not os.getenv("TRAVIS", False):   
+            # Shared x86
+            test('-s arch=x86 -s build_type=Debug -o Boost:shared=True')
+            test('-s arch=x86 -s build_type=Release -o Boost:shared=True')
+            
+            # Static x86
+            test('-s arch=x86 -s build_type=Debug -o Boost:shared=False')
+            test('-s arch=x86 -s build_type=Release -o Boost:shared=False')
+       
+	    # Static x86_64
         test('-s arch=x86_64 -s build_type=Debug -o Boost:shared=False')
         test('-s arch=x86_64 -s build_type=Release -o Boost:shared=False')
 
@@ -48,12 +55,6 @@ if __name__ == "__main__":
         test('-s arch=x86_64 -s build_type=Debug -o Boost:shared=True')
         test('-s arch=x86_64 -s build_type=Release -o Boost:shared=True')
 
-        if not platform.system() == "Darwin" and not os.getenv("TRAVIS", False):   
-            # Static x86
-            test('-s arch=x86 -s build_type=Debug -o Boost:shared=False')
-            test('-s arch=x86 -s build_type=Release -o Boost:shared=False')
-    
-            # Shared x86
-            test('-s arch=x86 -s build_type=Debug -o Boost:shared=True')
-            test('-s arch=x86 -s build_type=Release -o Boost:shared=True')
-
+            
+        # HEADER ONLY
+        test('-o Boost:header_only=True')
