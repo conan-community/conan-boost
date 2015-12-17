@@ -33,7 +33,11 @@ class BoostConan(ConanFile):
                 self.options["bzip2/1.0.6"].shared = self.options.shared
                 
             self.requires.add("zlib/1.2.8@lasote/stable", private=False)
-            self.options["zlib/1.2.8"].shared = self.options.shared
+        
+        if "zlib" in self.requires:
+            self.options["zlib"].shared = self.options.shared
+        if "bzip2" in self.requires:
+            self.options["bzip2"].shared = self.options.shared
 
     def source(self):
         zip_name = "%s.zip" % self.FOLDER_NAME if sys.platform == "win32" else "%s.tar.gz" % self.FOLDER_NAME
