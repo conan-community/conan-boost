@@ -9,7 +9,10 @@ env:
   - GCC_VERSION: 5.2
   - GCC_VERSION: 5.3
 install:
-  - mkdir -p ~/.conan/data
+  - wget http://downloads.conan.io/latest_debian -O conan.deb
+  - sudo dpkg -i conan.deb
+  - rm conan.deb
+  - conan user # It creates the conan data directory
 script:
   - export CONAN_UPLOAD=1 && 
            CONAN_REFERENCE="Boost/1.60.0" && 
