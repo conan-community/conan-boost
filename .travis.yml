@@ -9,7 +9,7 @@ env:
   - GCC_VERSION: 5.2
   - GCC_VERSION: 5.3
 install:
-  - mkdir ~/.conan/data
+  - mkdir -p ~/.conan/data
 script:
   - export CONAN_UPLOAD=1 && 
            CONAN_REFERENCE="Boost/1.60.0" && 
