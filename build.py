@@ -65,5 +65,4 @@ if __name__ == "__main__":
         test('-s arch=x86_64 -s build_type=Debug -o Boost:shared=False')
         test('-s arch=x86_64 -s build_type=Release -o Boost:shared=False')
           
-        # HEADER ONLY
-        test('-o Boost:header_only=True')
+
