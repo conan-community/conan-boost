@@ -4,10 +4,7 @@ cmake_minimum_required(VERSION 3.0)
 include(conanbuildinfo.cmake)
 
 CONAN_BASIC_SETUP()
-# find_package(Boost COMPONENTS regex)
-
-# Try to use the findBoost and link with the detected things
-find_package(Boost)
+find_package(Boost COMPONENTS regex)
 
 IF(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
