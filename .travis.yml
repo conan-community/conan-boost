@@ -1,24 +1,18 @@
 language: cpp
-compiler:
-- gcc
+sudo: required
+services:
+  - docker
+env:
+  - GCC_VERSION: 4.6
+  - GCC_VERSION: 4.8
+  - GCC_VERSION: 4.9
+  - GCC_VERSION: 5.2
+  - GCC_VERSION: 5.3
 install:
-# Install gcc-multilib (fixed some errors)
-- sudo apt-get update -qq
-- sudo apt-get install gcc-multilib
-# Install CMake 3
-- wget https://s3.amazonaws.com/biibinaries/thirdparty/cmake-3.0.2-Linux-64.tar.gz
-- tar -xzf cmake-3.0.2-Linux-64.tar.gz
-- sudo cp -fR cmake-3.0.2-Linux-64/* /usr
-- rm -rf cmake-3.0.2-Linux-64
-- rm cmake-3.0.2-Linux-64.tar.gz
-# Download conan
-- wget $CONAN_URL -O conan.deb
-- sudo dpkg -i conan.deb
-- rm conan.deb
-# Adjust config and settings
-- conan user lasote
-- echo -e "\ncompiler=gcc" >> ~/.conan/conan.conf
-- echo -e "\ncompiler.version=$(gcc -dumpversion)" >> ~/.conan/conan.conf
-
+  - mkdir ~/.conan/data
 script:
-- python build.py -x Boost
+  - export CONAN_UPLOAD=1 && 
+           CONAN_REFERENCE="Boost/1.60.0" && 
+           CONAN_USERNAME="lasote" && 
+           CONAN_CHANNEL="travis" && 
+           python build_with_docker.py $GCC_VERSION

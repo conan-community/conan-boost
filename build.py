@@ -2,9 +2,16 @@ import os
 import platform
 import sys
 
+############### CONFIGURE THESE VALUES ##################
+default_user = "lasote"
+default_channel = "testing"
+#########################################################
+
 if __name__ == "__main__":
-    
-    os.system('conan export lasote/stable')
+    channel = os.getenv("CONAN_CHANNEL", default_channel)
+    username = os.getenv("CONAN_USERNAME", default_user)
+    print("User: '%s' Channel: '%s'" % (username, channel))
+    os.system('conan export %s/%s' % (username, channel))
     
     def test(settings):
         argv =  " ".join(sys.argv[1:])
@@ -45,7 +52,7 @@ if __name__ == "__main__":
         test('-s arch=x86_64 -s build_type=Debug -o Boost:shared=True')
         test('-s arch=x86_64 -s build_type=Release -o Boost:shared=True')
         
-        if not platform.system() == "Darwin" and not os.getenv("TRAVIS", False):   
+        if not platform.system() == "Darwin":   
             # Shared x86
             test('-s arch=x86 -s build_type=Debug -o Boost:shared=True')
             test('-s arch=x86 -s build_type=Release -o Boost:shared=True')
@@ -57,9 +64,6 @@ if __name__ == "__main__":
 	    # Static x86_64
         test('-s arch=x86_64 -s build_type=Debug -o Boost:shared=False')
         test('-s arch=x86_64 -s build_type=Release -o Boost:shared=False')
-
-
-
-            
+          
         # HEADER ONLY
         test('-o Boost:header_only=True')
