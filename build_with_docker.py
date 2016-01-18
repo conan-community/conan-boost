@@ -1,14 +1,17 @@
 import os
-import platform
-import sys
+from build import get_builder
 
 if __name__ == "__main__":
-        
-    for gcc_version in ["4.6", "4.8", "4.9", "5.2"]:
-        image_name = "lasote/conangcc%s" % gcc_version.replace(".", "")
-        os.system("sudo docker pull %s" % image_name)
-        curdir = os.path.abspath(os.path.curdir)
-        command = 'sudo docker run --rm  -v %s:/home/conan/project -v '\
-                  '~/.conan/data:/home/conan/.conan/data -it %s /bin/sh -c '\
-                  '"cd project && python build.py"' % (curdir, image_name)
-        os.system(command)
+    channel = os.getenv("CONAN_CHANNEL", "testing")
+    username = os.getenv("CONAN_USERNAME", "lasote")
+    current_page = os.getenv("CONAN_CURRENT_PAGE", 1)
+    total_pages = os.getenv("CONAN_TOTAL_PAGES", 1)
+    gcc_versions = os.getenv("CONAN_GCC_VERSIONS", None)
+    gcc_versions = gcc_versions.split(",") if gcc_versions else None
+    
+    builder = get_builder(username, channel)
+    builder.docker_pack(current_page, total_pages, gcc_versions)
+    
+    if os.getenv("CONAN_UPLOAD", False) and os.getenv("CONAN_REFERENCE") and os.getenv("CONAN_PASSWORD"):
+        reference = os.getenv("CONAN_REFERENCE")
+        builder.upload_packages(reference, os.getenv("CONAN_PASSWORD"))

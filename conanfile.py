@@ -97,8 +97,6 @@ class BoostConan(ConanFile):
 
         return ret
     def package(self):
-        # Copy findZLIB.cmake to package
-        self.copy("FindBoost.cmake", ".", ".")
         
         self.copy(pattern="*", dst="include/boost", src="%s/boost" % self.FOLDER_NAME)
         self.copy(pattern="*.a", dst="lib", src="%s/stage/lib" % self.FOLDER_NAME)

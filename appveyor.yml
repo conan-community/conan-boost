@@ -1,0 +1,45 @@
+build: false
+
+environment:
+    PYTHON: "C:\\Python27"
+    PYTHON_VERSION: "2.7.8"
+    PYTHON_ARCH: "32"
+    
+    CONAN_UPLOAD: 1
+    CONAN_REFERENCE: "Boost/1.60.0"
+    CONAN_USERNAME: "lasote"
+    CONAN_CHANNEL: "ci"
+    CONAN_TOTAL_PAGES: 20
+    
+    matrix:
+        - CONAN_CURRENT_PAGE: 1
+        - CONAN_CURRENT_PAGE: 2  
+        - CONAN_CURRENT_PAGE: 3
+        - CONAN_CURRENT_PAGE: 4
+        - CONAN_CURRENT_PAGE: 5
+        - CONAN_CURRENT_PAGE: 6
+        - CONAN_CURRENT_PAGE: 7
+        - CONAN_CURRENT_PAGE: 8
+        - CONAN_CURRENT_PAGE: 9
+        - CONAN_CURRENT_PAGE: 10
+        - CONAN_CURRENT_PAGE: 11
+        - CONAN_CURRENT_PAGE: 12  
+        - CONAN_CURRENT_PAGE: 13
+        - CONAN_CURRENT_PAGE: 14
+        - CONAN_CURRENT_PAGE: 15
+        - CONAN_CURRENT_PAGE: 16
+        - CONAN_CURRENT_PAGE: 17
+        - CONAN_CURRENT_PAGE: 18
+        - CONAN_CURRENT_PAGE: 19
+        - CONAN_CURRENT_PAGE: 20
+
+init:
+  - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
+
+install:
+  - set PATH=%PATH%;%PYTHON%/Scripts/
+  - pip.exe install conan_build_tools # It install conan too
+  - conan user # It creates the conan data directory
+
+test_script:
+  - python build.py

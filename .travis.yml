@@ -1,24 +1,42 @@
-language: cpp
-compiler:
-- gcc
-install:
-# Install gcc-multilib (fixed some errors)
-- sudo apt-get update -qq
-- sudo apt-get install gcc-multilib
-# Install CMake 3
-- wget https://s3.amazonaws.com/biibinaries/thirdparty/cmake-3.0.2-Linux-64.tar.gz
-- tar -xzf cmake-3.0.2-Linux-64.tar.gz
-- sudo cp -fR cmake-3.0.2-Linux-64/* /usr
-- rm -rf cmake-3.0.2-Linux-64
-- rm cmake-3.0.2-Linux-64.tar.gz
-# Download conan
-- wget $CONAN_URL -O conan.deb
-- sudo dpkg -i conan.deb
-- rm conan.deb
-# Adjust config and settings
-- conan user lasote
-- echo -e "\ncompiler=gcc" >> ~/.conan/conan.conf
-- echo -e "\ncompiler.version=$(gcc -dumpversion)" >> ~/.conan/conan.conf
+language: python
+sudo: required
+services:
+  - docker
+env:
+ global:
+   - CONAN_UPLOAD: 1
+   - CONAN_REFERENCE: "Boost/1.60.0"
+   - CONAN_USERNAME: "lasote"
+   - CONAN_CHANNEL: "ci"
+   - CONAN_TOTAL_PAGES: 4
+ matrix:
+   - CONAN_GCC_VERSIONS: 4.6 CONAN_CURRENT_PAGE=1
+   - CONAN_GCC_VERSIONS: 4.6 CONAN_CURRENT_PAGE=2
+   - CONAN_GCC_VERSIONS: 4.6 CONAN_CURRENT_PAGE=3
+   - CONAN_GCC_VERSIONS: 4.6 CONAN_CURRENT_PAGE=4
+  
+   - CONAN_GCC_VERSIONS: 4.8 CONAN_CURRENT_PAGE=1
+   - CONAN_GCC_VERSIONS: 4.8 CONAN_CURRENT_PAGE=2
+   - CONAN_GCC_VERSIONS: 4.8 CONAN_CURRENT_PAGE=3
+   - CONAN_GCC_VERSIONS: 4.8 CONAN_CURRENT_PAGE=4
+  
+   - CONAN_GCC_VERSIONS: 4.9 CONAN_CURRENT_PAGE=1
+   - CONAN_GCC_VERSIONS: 4.9 CONAN_CURRENT_PAGE=2
+   - CONAN_GCC_VERSIONS: 4.9 CONAN_CURRENT_PAGE=3
+   - CONAN_GCC_VERSIONS: 4.9 CONAN_CURRENT_PAGE=4
+  
+   - CONAN_GCC_VERSIONS: 5.2 CONAN_CURRENT_PAGE=1
+   - CONAN_GCC_VERSIONS: 5.2 CONAN_CURRENT_PAGE=2
+   - CONAN_GCC_VERSIONS: 5.2 CONAN_CURRENT_PAGE=3
+   - CONAN_GCC_VERSIONS: 5.2 CONAN_CURRENT_PAGE=4
+  
+   - CONAN_GCC_VERSIONS: 5.3 CONAN_CURRENT_PAGE=1
+   - CONAN_GCC_VERSIONS: 5.3 CONAN_CURRENT_PAGE=2
+   - CONAN_GCC_VERSIONS: 5.3 CONAN_CURRENT_PAGE=3
+   - CONAN_GCC_VERSIONS: 5.3 CONAN_CURRENT_PAGE=4
 
+install:
+  - pip install conan_build_tools # It install conan too
+  - conan user # It creates the conan data directory
 script:
-- python build.py -x Boost
+  - python build_with_docker.py

@@ -1,65 +1,55 @@
 import os
-import platform
+from conan.packager import ConanMultiPackager
 import sys
+import platform
+from copy import copy
 
-if __name__ == "__main__":
-    
-    os.system('conan export lasote/stable')
-    
-    def test(settings):
-        argv =  " ".join(sys.argv[1:])
-        command = "conan test %s %s" % (settings, argv)
-        retcode = os.system(command)
-        if retcode != 0:
-            exit("Error while executing:\n\t %s" % command)
-
-
-    if platform.system() == "Windows":
-
-        for compiler_version in ("14", "12"):
-            compiler = '-s compiler="Visual Studio" -s compiler.version=%s ' % compiler_version
-            
-            # Shared
-            test(compiler + '-s arch=x86 -s build_type=Debug -s compiler.runtime=MDd -o Boost:shared=True')
-            test(compiler + '-s arch=x86 -s build_type=Release -s compiler.runtime=MD -o Boost:shared=True')
-            test(compiler + '-s arch=x86_64 -s build_type=Debug -s compiler.runtime=MDd -o Boost:shared=True')
-            test(compiler + '-s arch=x86_64 -s build_type=Release -s compiler.runtime=MD -o Boost:shared=True')
-
-            
-            # Static
-            test(compiler + '-s arch=x86_64 -s build_type=Release -s compiler.runtime=MT -o Boost:shared=False')
-            test(compiler + '-s arch=x86_64 -s build_type=Debug -s compiler.runtime=MTd -o Boost:shared=False')
-            test(compiler + '-s arch=x86_64 -s build_type=Debug -s compiler.runtime=MDd -o Boost:shared=False')
-            test(compiler + '-s arch=x86_64 -s build_type=Release -s compiler.runtime=MD -o Boost:shared=False')
-            
-            
-            test(compiler + '-s arch=x86 -s build_type=Debug -s compiler.runtime=MDd -o Boost:shared=False')
-            test(compiler + '-s arch=x86 -s build_type=Debug -s compiler.runtime=MTd -o Boost:shared=False')
-            test(compiler + '-s arch=x86 -s build_type=Release -s compiler.runtime=MD -o Boost:shared=False')
-            test(compiler + '-s arch=x86 -s build_type=Release -s compiler.runtime=MT -o Boost:shared=False')
-
-            
-    else:  # Compiler and version not specified, please set it in your home/.conan/conan.conf (Valid for Macos and Linux)
-
-        # Shared x86_64
-        test('-s arch=x86_64 -s build_type=Debug -o Boost:shared=True')
-        test('-s arch=x86_64 -s build_type=Release -o Boost:shared=True')
-        
-        if not platform.system() == "Darwin" and not os.getenv("TRAVIS", False):   
-            # Shared x86
-            test('-s arch=x86 -s build_type=Debug -o Boost:shared=True')
-            test('-s arch=x86 -s build_type=Release -o Boost:shared=True')
-            
-            # Static x86
-            test('-s arch=x86 -s build_type=Debug -o Boost:shared=False')
-            test('-s arch=x86 -s build_type=Release -o Boost:shared=False')
+def add_visual_builds(builder, visual_version, arch):
+    base_set = {"compiler": "Visual Studio", 
+                "compiler.version": visual_version, 
+                "arch": arch}
+    sets = []
+    sets.append([{"build_type": "Release", "compiler.runtime": "MT"}, {"Boost:shared=False"}])        
+    sets.append([{"build_type": "Debug", "compiler.runtime": "MTd"}, {"Boost:shared=False"}])
+    sets.append([{"build_type": "Debug", "compiler.runtime": "MDd"}, {"Boost:shared=False"}])
+    sets.append([{"build_type": "Release", "compiler.runtime": "MD"}, {"Boost:shared=False"}])
+    sets.append([{"build_type": "Debug", "compiler.runtime": "MDd"}, {"Boost:shared=True"}])
+    sets.append([{"build_type": "Release", "compiler.runtime": "MD"}, {"Boost:shared=True"}])        
+      
+    for setting, options in sets:
+       tmp = copy(base_set)
+       tmp.update(setting)
+       builder.add(setting, options)
        
-	    # Static x86_64
-        test('-s arch=x86_64 -s build_type=Debug -o Boost:shared=False')
-        test('-s arch=x86_64 -s build_type=Release -o Boost:shared=False')
-
-
-
-            
-        # HEADER ONLY
-        test('-o Boost:header_only=True')
+def add_other_builds(builder):
+    # Not specified compiler or compiler version, will use the auto detected     
+    for arch in ["x86", "x86_64"]:
+        for shared in [True, False]:
+            for build_type in ["Debug", "Release"]:
+                if arch == "x86" and not platform.system() == "Darwin" and not os.getenv("TRAVIS", False):    
+                    builder.add({"arch":arch, "build_type": build_type}, {"Boost:shared": shared})
+           
+def get_builder(username, channel):
+    args = " ".join(sys.argv[1:])
+    builder = ConanMultiPackager(args, username, channel)
+    if platform.system() == "Windows":
+        for visual_version in [10, 12, 14]:
+            for arch in ["x86", "x86_64"]:
+                add_visual_builds(builder, visual_version, arch)
+    else:
+        add_other_builds(builder)
+    
+    return builder
+        
+if __name__ == "__main__":
+    channel = os.getenv("CONAN_CHANNEL", "testing")
+    username = os.getenv("CONAN_USERNAME", "lasote")
+    current_page = os.getenv("CONAN_CURRENT_PAGE", "1")
+    total_pages = os.getenv("CONAN_TOTAL_PAGES", "1")
+    
+    builder = get_builder(username, channel)
+    builder.pack(current_page, total_pages)
+    
+    if os.getenv("CONAN_UPLOAD", False) and os.getenv("CONAN_REFERENCE") and os.getenv("CONAN_PASSWORD"):
+        reference = os.getenv("CONAN_REFERENCE")
+        builder.upload_packages(reference, os.getenv("CONAN_PASSWORD"))
