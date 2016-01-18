@@ -71,7 +71,7 @@ class BoostConan(ConanFile):
             
         full_command = "cd %s && %s %s -j4 --abbreviate-paths --without-python %s" % (self.FOLDER_NAME, command, b2_flags, deps_options)
         self.output.warn(full_command)
-        self.run(full_command, output=False)
+        self.run(full_command)#, output=False)
         
     def prepare_deps_options(self):
         ret = ""
