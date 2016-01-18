@@ -26,8 +26,9 @@ def add_other_builds(builder):
     for arch in ["x86", "x86_64"]:
         for shared in [True, False]:
             for build_type in ["Debug", "Release"]:
-                if arch == "x86" and not platform.system() == "Darwin" and not os.getenv("TRAVIS", False):    
-                    builder.add({"arch":arch, "build_type": build_type}, {"Boost:shared": shared})
+                if arch == "x86" and (platform.system() == "Darwin" or os.getenv("TRAVIS", False)):    
+                    continue
+                builder.add({"arch":arch, "build_type": build_type}, {"Boost:shared": shared})
            
 def get_builder(username, channel):
     args = " ".join(sys.argv[1:])
