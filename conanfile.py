@@ -9,25 +9,19 @@ class BoostConan(ConanFile):
     
     settings = "os", "arch", "compiler", "build_type"   
     FOLDER_NAME = "boost_%s" % version.replace(".", "_") 
-    options = {"shared": [True, False], "header_only": [True, False]}
-    default_options = "shared=True", "header_only=False"
+    options = {"shared": [True, False]}
+    default_options = "shared=True"
     counter_config = 0
     url="https://github.com/lasote/conan-boost"
-    exports = ["FindBoost.cmake"]
    
     def config(self):
-        # If header only, the compiler, etc, does not affect the package!
         self.counter_config += 1
         # config is called twice, one before receive the upper dependencies and another after
-        if self.options.header_only and self.counter_config==2:
-            self.output.info("HEADER ONLY")
-            self.settings.clear()
-            self.options.remove("shared")
-        if not self.options.header_only and self.settings.os == "Windows" and self.options.shared and "MT" in str(self.settings.compiler.runtime):
+        if self.settings.os == "Windows" and self.options.shared and "MT" in str(self.settings.compiler.runtime):
             self.options.shared = False
         
         # BZIP2 
-        if not self.options.header_only and self.counter_config==2:
+        if self.counter_config==2:
             if self.settings.os == "Linux" or self.settings.os == "Macos":
                 self.requires.add("bzip2/1.0.6@lasote/stable", private=False)
                 self.options["bzip2/1.0.6"].shared = self.options.shared
@@ -48,8 +42,6 @@ class BoostConan(ConanFile):
         os.unlink(zip_name)
 
     def build(self):
-        if self.options.header_only:
-            return
         
         command = "bootstrap" if self.settings.os == "Windows" else "./bootstrap.sh"
         try:
@@ -79,7 +71,7 @@ class BoostConan(ConanFile):
             
         full_command = "cd %s && %s %s -j4 --abbreviate-paths --without-python %s" % (self.FOLDER_NAME, command, b2_flags, deps_options)
         self.output.warn(full_command)
-        self.run(full_command)
+        self.run(full_command, output=False)
         
     def prepare_deps_options(self):
         ret = ""
@@ -107,43 +99,42 @@ class BoostConan(ConanFile):
         self.copy(pattern="*.dll", dst="bin", src="%s/stage/lib" % self.FOLDER_NAME)
         
     def package_info(self):
-        if not self.options.header_only:
-            if self.options.shared:
-                self.cpp_info.defines.append("BOOST_ALL_DYN_LINK")
-            else:
-                self.cpp_info.defines.append("BOOST_USE_STATIC_LIBS")
+        if self.options.shared:
+            self.cpp_info.defines.append("BOOST_ALL_DYN_LINK")
+        else:
+            self.cpp_info.defines.append("BOOST_USE_STATIC_LIBS")
 
-            libs = ("atomic chrono container context coroutine date_time exception filesystem "
-                    "graph iostreams locale log_setup log math_c99 math_c99f math_c99l math_tr1 "
-                    "math_tr1f math_tr1l prg_exec_monitor program_options random regex serialization "
-                    "signals system test_exec_monitor thread timer unit_test_framework wave "
-                    "wserialization").split()
-            
-            if self.settings.os != "Windows":
-                self.cpp_info.libs.extend(["boost_%s" % lib for lib in libs])
-            elif self.settings.os == "Windows":
-                win_libs = []
-                # http://www.boost.org/doc/libs/1_55_0/more/getting_started/windows.html
-                visual_version = int(str(self.settings.compiler.version)) * 10
-                runtime = "mt"# str(self.settings.compiler.runtime).lower()
-            
-                abi_tags = []
-                if self.settings.compiler.runtime in ("MTd", "MT"):
-                    abi_tags.append("s")
-            
-                if self.settings.build_type == "Debug":
-                    abi_tags.append("gd")
-            
-                abi_tags = ("-%s" % "".join(abi_tags)) if abi_tags else ""
-            
-                version = "_".join(self.version.split(".")[0:2])
-                suffix = "vc%d-%s%s-%s" %  (visual_version, runtime, abi_tags, version)
-                prefix = "lib" if not self.options.shared else ""
-            
-            
-                win_libs.extend(["%sboost_%s-%s" % (prefix, lib, suffix) for lib in libs if lib not in ["exception", "test_exec_monitor"]])
-                win_libs.extend(["libboost_exception-%s" % suffix, "libboost_test_exec_monitor-%s" % suffix])
-            
-                #self.output.warn("EXPORTED BOOST LIBRARIES: %s" % win_libs)
-                self.cpp_info.libs.extend(win_libs)
-                self.cpp_info.defines.extend(["BOOST_ALL_NO_LIB"]) # DISABLES AUTO LINKING! NO SMART AND MAGIC DECISIONS THANKS!
+        libs = ("atomic chrono container context coroutine date_time exception filesystem "
+                "graph iostreams locale log_setup log math_c99 math_c99f math_c99l math_tr1 "
+                "math_tr1f math_tr1l prg_exec_monitor program_options random regex serialization "
+                "signals system test_exec_monitor thread timer unit_test_framework wave "
+                "wserialization").split()
+        
+        if self.settings.os != "Windows":
+            self.cpp_info.libs.extend(["boost_%s" % lib for lib in libs])
+        elif self.settings.os == "Windows":
+            win_libs = []
+            # http://www.boost.org/doc/libs/1_55_0/more/getting_started/windows.html
+            visual_version = int(str(self.settings.compiler.version)) * 10
+            runtime = "mt"# str(self.settings.compiler.runtime).lower()
+        
+            abi_tags = []
+            if self.settings.compiler.runtime in ("MTd", "MT"):
+                abi_tags.append("s")
+        
+            if self.settings.build_type == "Debug":
+                abi_tags.append("gd")
+        
+            abi_tags = ("-%s" % "".join(abi_tags)) if abi_tags else ""
+        
+            version = "_".join(self.version.split(".")[0:2])
+            suffix = "vc%d-%s%s-%s" %  (visual_version, runtime, abi_tags, version)
+            prefix = "lib" if not self.options.shared else ""
+        
+        
+            win_libs.extend(["%sboost_%s-%s" % (prefix, lib, suffix) for lib in libs if lib not in ["exception", "test_exec_monitor"]])
+            win_libs.extend(["libboost_exception-%s" % suffix, "libboost_test_exec_monitor-%s" % suffix])
+        
+            #self.output.warn("EXPORTED BOOST LIBRARIES: %s" % win_libs)
+            self.cpp_info.libs.extend(win_libs)
+            self.cpp_info.defines.extend(["BOOST_ALL_NO_LIB"]) # DISABLES AUTO LINKING! NO SMART AND MAGIC DECISIONS THANKS!
