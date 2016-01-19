@@ -13,6 +13,7 @@ class BoostConan(ConanFile):
     default_options = "shared=True"
     counter_config = 0
     url="https://github.com/lasote/conan-boost"
+    exports = ["FindBoost.cmake"]
    
     def config(self):
         self.counter_config += 1
@@ -89,7 +90,9 @@ class BoostConan(ConanFile):
 
         return ret
     def package(self):
-        
+        # Copy findZLIB.cmake to package
+        self.copy("FindBoost.cmake", ".", ".")
+
         self.copy(pattern="*", dst="include/boost", src="%s/boost" % self.FOLDER_NAME)
         self.copy(pattern="*.a", dst="lib", src="%s/stage/lib" % self.FOLDER_NAME)
         self.copy(pattern="*.so", dst="lib", src="%s/stage/lib" % self.FOLDER_NAME)
