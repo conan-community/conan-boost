@@ -5,6 +5,9 @@ import platform
 from copy import copy
 
 def add_visual_builds(builder, visual_version, arch):
+    if visual_version == 10 and arch=="x86_64":
+        return
+        
     base_set = {"compiler": "Visual Studio", 
                 "compiler.version": visual_version, 
                 "arch": arch}
