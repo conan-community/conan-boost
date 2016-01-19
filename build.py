@@ -9,17 +9,17 @@ def add_visual_builds(builder, visual_version, arch):
                 "compiler.version": visual_version, 
                 "arch": arch}
     sets = []
-    sets.append([{"build_type": "Release", "compiler.runtime": "MT"}, {"Boost:shared=False"}])        
-    sets.append([{"build_type": "Debug", "compiler.runtime": "MTd"}, {"Boost:shared=False"}])
-    sets.append([{"build_type": "Debug", "compiler.runtime": "MDd"}, {"Boost:shared=False"}])
-    sets.append([{"build_type": "Release", "compiler.runtime": "MD"}, {"Boost:shared=False"}])
-    sets.append([{"build_type": "Debug", "compiler.runtime": "MDd"}, {"Boost:shared=True"}])
-    sets.append([{"build_type": "Release", "compiler.runtime": "MD"}, {"Boost:shared=True"}])        
+    sets.append([{"build_type": "Release", "compiler.runtime": "MT"}, {"Boost:shared":False}])        
+    sets.append([{"build_type": "Debug", "compiler.runtime": "MTd"}, {"Boost:shared":False}])
+    sets.append([{"build_type": "Debug", "compiler.runtime": "MDd"}, {"Boost:shared":False}])
+    sets.append([{"build_type": "Release", "compiler.runtime": "MD"}, {"Boost:shared":False}])
+    sets.append([{"build_type": "Debug", "compiler.runtime": "MDd"}, {"Boost:shared":True}])
+    sets.append([{"build_type": "Release", "compiler.runtime": "MD"}, {"Boost:shared":True}])        
       
     for setting, options in sets:
        tmp = copy(base_set)
        tmp.update(setting)
-       builder.add(setting, options)
+       builder.add(tmp, options)
        
 def add_other_builds(builder):
     # Not specified compiler or compiler version, will use the auto detected     
