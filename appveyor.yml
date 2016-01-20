@@ -9,7 +9,7 @@ environment:
     CONAN_REFERENCE: "Boost/1.60.0"
     CONAN_USERNAME: "lasote"
     CONAN_CHANNEL: "ci"
-    CONAN_TOTAL_PAGES: 25
+    CONAN_TOTAL_PAGES: 30
     
     matrix:
         - CONAN_CURRENT_PAGE: 1
@@ -36,6 +36,11 @@ environment:
         - CONAN_CURRENT_PAGE: 23
         - CONAN_CURRENT_PAGE: 24
         - CONAN_CURRENT_PAGE: 25
+        - CONAN_CURRENT_PAGE: 26
+        - CONAN_CURRENT_PAGE: 27
+        - CONAN_CURRENT_PAGE: 28
+        - CONAN_CURRENT_PAGE: 29
+        - CONAN_CURRENT_PAGE: 30
 
 init:
   - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
