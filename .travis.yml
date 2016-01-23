@@ -9,6 +9,7 @@ env:
    - CONAN_USERNAME: "lasote"
    - CONAN_CHANNEL: "ci"
    - CONAN_TOTAL_PAGES: 4
+   - CONAN_USE_DOCKER: 1
  matrix:
    - CONAN_GCC_VERSIONS: 4.6 CONAN_CURRENT_PAGE=1
    - CONAN_GCC_VERSIONS: 4.6 CONAN_CURRENT_PAGE=2
@@ -36,7 +37,7 @@ env:
    - CONAN_GCC_VERSIONS: 5.3 CONAN_CURRENT_PAGE=4
 
 install:
-  - pip install conan_build_tools # It install conan too
+  - pip install conan_package_tools # It install conan too
   - conan user # It creates the conan data directory
 script:
-  - python build_with_docker.py
+  - python build.py
