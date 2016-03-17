@@ -5,8 +5,7 @@ import platform, os, sys
 
 class BoostConan(ConanFile):
     name = "Boost"
-    version = "1.60.0" 
-    
+    version = "1.60.0"   
     settings = "os", "arch", "compiler", "build_type"   
     FOLDER_NAME = "boost_%s" % version.replace(".", "_") 
     options = {"shared": [True, False]}
