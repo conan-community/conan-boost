@@ -8,8 +8,8 @@ class BoostConan(ConanFile):
     version = "1.60.0"   
     settings = "os", "arch", "compiler", "build_type"   
     FOLDER_NAME = "boost_%s" % version.replace(".", "_") 
-    options = {"shared": [True, False]}
-    default_options = "shared=True"
+    options = {"shared": [True, False], "header_only": [True, False]}
+    default_options = "shared=True", "header_only=False"
     counter_config = 0
     url="https://github.com/lasote/conan-boost"
     exports = ["FindBoost.cmake"]
@@ -25,14 +25,24 @@ class BoostConan(ConanFile):
         if self.counter_config==2:
             if self.settings.os == "Linux" or self.settings.os == "Macos":
                 self.requires.add("bzip2/1.0.6@lasote/stable", private=False)
-                self.options["bzip2/1.0.6"].shared = self.options.shared
-                
+                if not self.options.header_only:
+                    self.options["bzip2/1.0.6"].shared = self.options.shared
             self.requires.add("zlib/1.2.8@lasote/stable", private=False)
         
+            # Header only
+            if self.options.header_only:
+                self.settings.remove("compiler")
+                self.settings.remove("os")
+                self.settings.remove("arch")
+                self.settings.remove("build_type")
+                self.options.remove("shared")
+
         if "zlib" in self.requires:
-            self.options["zlib"].shared = self.options.shared
+            if not self.options.header_only:
+                self.options["zlib"].shared = self.options.shared
         if "bzip2" in self.requires:
-            self.options["bzip2"].shared = self.options.shared
+            if not self.options.header_only:
+                self.options["bzip2"].shared = self.options.shared
 
     def source(self):
         zip_name = "%s.zip" % self.FOLDER_NAME if sys.platform == "win32" else "%s.tar.gz" % self.FOLDER_NAME
@@ -43,7 +53,9 @@ class BoostConan(ConanFile):
         os.unlink(zip_name)
 
     def build(self):
-        
+        if self.options.header_only:
+            self.output.warn("Header only package, skipping build")
+            return
         command = "bootstrap" if self.settings.os == "Windows" else "./bootstrap.sh"
         try:
             self.run("cd %s && %s" % (self.FOLDER_NAME, command))
@@ -119,10 +131,14 @@ class BoostConan(ConanFile):
         self.copy(pattern="*.dll", dst="bin", src="%s/stage/lib" % self.FOLDER_NAME)
         
     def package_info(self):
-        if self.options.shared:
+        
+        if not self.options.header_only and self.options.shared:
             self.cpp_info.defines.append("BOOST_ALL_DYN_LINK")
         else:
             self.cpp_info.defines.append("BOOST_USE_STATIC_LIBS")
+
+        if self.options.header_only:
+            return
 
         libs = ("atomic chrono container context coroutine date_time exception filesystem "
                 "graph iostreams locale log_setup log math_c99 math_c99f math_c99l math_tr1 "
