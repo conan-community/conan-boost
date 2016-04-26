@@ -15,6 +15,11 @@ class BoostConan(ConanFile):
     exports = ["FindBoost.cmake"]
     license="Boost Software License - Version 1.0. http://www.boost.org/LICENSE_1_0.txt"
    
+   
+    def conan_info(self):
+        if self.options.header_only:
+            self.info.requires._data = {}
+   
     def config(self):
         self.counter_config += 1
         # config is called twice, one before receive the upper dependencies and another after
@@ -68,6 +73,8 @@ class BoostConan(ConanFile):
         flags = []
         if self.settings.compiler == "Visual Studio":
             flags.append("toolset=msvc-%s.0" % self.settings.compiler.version)
+        elif str(self.settings.compiler) in ["clang", "gcc"]:
+            flags.append("toolset=%s"% self.settings.compiler)
 
         flags.append("link=%s" % ("static" if not self.options.shared else "shared"))
         if self.settings.compiler == "Visual Studio" and self.settings.compiler.runtime:
