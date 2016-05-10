@@ -24,14 +24,15 @@ class DefaultNameConan(ConanFile):
     def build(self):
         cmake = CMake(self.settings)
         header_only = "-DHEADER_ONLY=TRUE " if self.options["Boost"].header_only else ""
-        self.run('cmake . %s %s' % (cmake.command_line, header_only))
+        self.run('cmake %s %s %s' % (self.conanfile_directory, cmake.command_line, header_only))
         self.run("cmake --build . %s" % cmake.build_config)
 
     def imports(self):
         self.copy(pattern="*.dll", dst="bin", src="bin")
         self.copy(pattern="*.dylib", dst="bin", src="lib")
         
-    def test(self):
-        self.run("cd bin && .%slambda < ../data.txt" % (os.sep))
+    def test(self):        
+        data_file = os.path.join(self.conanfile_directory, "data.txt")
+        self.run("cd bin && .%slambda < %s" % (os.sep, data_file))
         if not self.options["Boost"].header_only:
-            self.run("cd bin && .%sregex_exe < ../data.txt" % (os.sep))
+            self.run("cd bin && .%sregex_exe < %s" % (os.sep, data_file))

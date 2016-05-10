@@ -8,8 +8,8 @@ class BoostConan(ConanFile):
     version = "1.60.0"   
     settings = "os", "arch", "compiler", "build_type"   
     FOLDER_NAME = "boost_%s" % version.replace(".", "_") 
-    options = {"shared": [True, False], "header_only": [True, False]}
-    default_options = "shared=True", "header_only=False"
+    options = {"shared": [True, False], "header_only": [True, False], "fPIC": [True, False]}
+    default_options = "shared=True", "header_only=False", "fPIC=False"
     counter_config = 0
     url="https://github.com/lasote/conan-boost"
     exports = ["FindBoost.cmake"]
