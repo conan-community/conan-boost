@@ -82,6 +82,13 @@ class BoostConan(ConanFile):
         flags.append("variant=%s" % str(self.settings.build_type).lower())
         flags.append("address-model=%s" % ("32" if self.settings.arch == "x86" else "64"))
         
+        
+        cxx_flags = []
+        # fPIC DEFINITION
+        if self.options.fPIC:
+            cxx_flags.append("-fPIC")
+        
+        
         # LIBCXX DEFINITION FOR BOOST B2
         try:
             if str(self.settings.compiler.libcxx) == "libstdc++":
@@ -90,12 +97,17 @@ class BoostConan(ConanFile):
                 flags.append("define=_GLIBCXX_USE_CXX11_ABI=1")
             if "clang" in str(self.settings.compiler):
                 if str(self.settings.compiler.libcxx) == "libc++":
-                    flags.append('cxxflags="-stdlib=libc++ -std=c++11"')
+                    cxx_flags.append("-stdlib=libc++")
+                    cxx_flags.append("-std=c++11")
                     flags.append('linkflags="-stdlib=libc++"')
                 else:
-                    flags.append('cxxflags="-stdlib=libstdc++ -std=c++11"')
+                    cxx_flags.append("-stdlib=libstdc++")
+                    cxx_flags.append("-std=c++11")
         except:
             pass
+      
+        cxx_flags = 'cxxflags="%s"' % " ".join(cxx_flags)
+        flags.append(cxx_flags)
       
         # JOIN ALL FLAGS
         b2_flags = " ".join(flags)
