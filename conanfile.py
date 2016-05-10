@@ -106,7 +106,7 @@ class BoostConan(ConanFile):
         except:
             pass
       
-        cxx_flags = 'cxxflags="%s"' % " ".join(cxx_flags)
+        cxx_flags = 'cxxflags="%s"' % " ".join(cxx_flags) if cxx_flags else ""
         flags.append(cxx_flags)
       
         # JOIN ALL FLAGS
