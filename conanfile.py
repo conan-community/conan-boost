@@ -85,7 +85,7 @@ class BoostConan(ConanFile):
         
         cxx_flags = []
         # fPIC DEFINITION
-        if self.options.fPIC:
+        if self.options.fPIC and self.settings.os != "Windows":
             cxx_flags.append("-fPIC")
         
         
