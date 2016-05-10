@@ -26,6 +26,12 @@ class BoostConan(ConanFile):
         if self.settings.os == "Windows" and self.options.shared and "MT" in str(self.settings.compiler.runtime):
             self.options.shared = False
         
+        if self.settings.os == "Windows":
+            try:
+                self.options.remove("fPIC")
+            except: 
+                pass
+        
         # BZIP2 
         if self.counter_config==2:
             if self.settings.os == "Linux" or self.settings.os == "Macos":
@@ -85,8 +91,9 @@ class BoostConan(ConanFile):
         
         cxx_flags = []
         # fPIC DEFINITION
-        if self.options.fPIC and self.settings.os != "Windows":
-            cxx_flags.append("-fPIC")
+        if self.settings.os != "Windows":
+            if self.options.fPIC:
+                cxx_flags.append("-fPIC")
         
         
         # LIBCXX DEFINITION FOR BOOST B2
