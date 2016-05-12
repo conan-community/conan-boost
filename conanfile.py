@@ -166,11 +166,10 @@ class BoostConan(ConanFile):
         if self.options.header_only:
             return
 
-        libs = ("atomic chrono container context coroutine date_time exception filesystem "
+        libs = ("unit_test_framework prg_exec_monitor test_exec_monitor atomic chrono container coroutine context date_time exception filesystem "
                 "graph iostreams locale log_setup log math_c99 math_c99f math_c99l math_tr1 "
-                "math_tr1f math_tr1l prg_exec_monitor program_options random regex serialization "
-                "signals system test_exec_monitor thread timer unit_test_framework wave "
-                "wserialization").split()
+                "math_tr1f math_tr1l program_options random regex serialization "
+                "signals system thread timer wave wserialization ").split()
         
         if self.settings.os != "Windows":
             self.cpp_info.libs.extend(["boost_%s" % lib for lib in libs])
@@ -178,7 +177,7 @@ class BoostConan(ConanFile):
             win_libs = []
             # http://www.boost.org/doc/libs/1_55_0/more/getting_started/windows.html
             visual_version = int(str(self.settings.compiler.version)) * 10
-            runtime = "mt"# str(self.settings.compiler.runtime).lower()
+            runtime = "mt" # str(self.settings.compiler.runtime).lower()
         
             abi_tags = []
             if self.settings.compiler.runtime in ("MTd", "MT"):
