@@ -1,5 +1,6 @@
-MESSAGE(STATUS "********* Conan FindBoost wrapper! **********")
-# SET(Boost_DEBUG 1)
+MESSAGE(STATUS "********* Conan FindBoost wrapper ojojoj **********")
+SET(Boost_DEBUG 0)
+
 # SET(BOOST_ALL_MODULES atomic chrono container context coroutine date_time exception filesystem graph iostreams locale log_setup log math_c99 math_c99f math_c99l math_tr1 math_tr1f math_tr1l prg_exec_monitor program_options random regex serialization signals system test_exec_monitor thread timer unit_test_framework wave wserialization)
   SET(BOOST_ALL_MODULES atomic chrono container context coroutine date_time           filesystem graph iostreams locale log_setup log math_c99 math_c99f math_c99l math_tr1 math_tr1f math_tr1l prg_exec_monitor program_options random regex serialization signals system                   thread timer unit_test_framework wave wserialization)
 
@@ -10,6 +11,8 @@ IF(NOT Boost_FIND_COMPONENTS)
        SET(Boost_FIND_REQUIRED_${module} 0) # Don't crash if not found
     endforeach()
 ENDIF()
+
+MESSAGE("COMPONENTS TO SEARCH: ${Boost_FIND_COMPONENTS}")
 
 SET(BOOST_ROOT ${CONAN_BOOST_ROOT})
 SET(BOOST_INCLUDEDIR ${CONAN_INCLUDE_DIRS_BOOST})
@@ -39,13 +42,12 @@ IF(WIN32)
     MESSAGE("STATIC RUNTIME: ${Boost_USE_STATIC_RUNTIME}")
     
     IF(CONANINFO_FILE MATCHES "shared=False")
-        SET(Boost_LIB_PREFIX "lib") # Removed in the original file
+        SET(Boost_USE_STATIC_LIBS ON) # Removed in the original file
     ELSE()
-        SET(Boost_LIB_PREFIX "")
+        SET(Boost_USE_STATIC_LIBS OFF)
     ENDIF()
 
 ENDIF()
-
 
 IF(CONANINFO_FILE MATCHES "header_only=True")
     MESSAGE(STATUS "DETECTED Boost HEADER ONLY PACKAGE")
@@ -1860,5 +1862,5 @@ list(REMOVE_DUPLICATES _Boost_COMPONENTS_SEARCHED)
 list(SORT _Boost_COMPONENTS_SEARCHED)
 set(_Boost_COMPONENTS_SEARCHED "${_Boost_COMPONENTS_SEARCHED}"
   CACHE INTERNAL "Components requested for this build tree.")
-  
+
 ENDIF() # END IF HEADER_ONLY
