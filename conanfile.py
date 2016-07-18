@@ -23,10 +23,11 @@ class BoostConan(ConanFile):
     def config(self):
         self.counter_config += 1
         # config is called twice, one before receive the upper dependencies and another after
-        if self.settings.os == "Windows" and self.options.shared and "MT" in str(self.settings.compiler.runtime):
+        if self.settings.compiler == "Visual Studio" and \
+           self.options.shared and "MT" in str(self.settings.compiler.runtime):
             self.options.shared = False
         
-        if self.settings.os == "Windows":
+        if self.settings.compiler == "Visual Studio":
             try:
                 self.options.remove("fPIC")
             except: 
@@ -91,7 +92,7 @@ class BoostConan(ConanFile):
         
         cxx_flags = []
         # fPIC DEFINITION
-        if self.settings.os != "Windows":
+        if self.settings.compiler != "Visual Studio":
             if self.options.fPIC:
                 cxx_flags.append("-fPIC")
         
@@ -171,9 +172,9 @@ class BoostConan(ConanFile):
                 "math_tr1f math_tr1l program_options random regex wserialization serialization "
                 "signals coroutine context wave timer thread chrono system").split()
         
-        if self.settings.os != "Windows":
+        if self.settings.compiler != "Visual Studio":
             self.cpp_info.libs.extend(["boost_%s" % lib for lib in libs])
-        elif self.settings.os == "Windows":
+        else:
             win_libs = []
             # http://www.boost.org/doc/libs/1_55_0/more/getting_started/windows.html
             visual_version = int(str(self.settings.compiler.version)) * 10

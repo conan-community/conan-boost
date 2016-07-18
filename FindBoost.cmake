@@ -1,4 +1,4 @@
-MESSAGE(STATUS "********* Conan FindBoost wrapper ojojoj **********")
+MESSAGE(STATUS "********* Conan FindBoost wrapper **********")
 SET(Boost_DEBUG 0)
 
 # SET(BOOST_ALL_MODULES atomic chrono container context coroutine date_time exception filesystem graph iostreams locale log_setup log math_c99 math_c99f math_c99l math_tr1 math_tr1f math_tr1l prg_exec_monitor program_options random regex serialization signals system test_exec_monitor thread timer unit_test_framework wave wserialization)
