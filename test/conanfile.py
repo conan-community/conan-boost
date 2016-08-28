@@ -1,6 +1,7 @@
 from conans.model.conan_file import ConanFile
 from conans import CMake
 import os
+import sys
 
 ############### CONFIGURE THESE VALUES ##################
 default_user = "lasote"
@@ -24,7 +25,8 @@ class DefaultNameConan(ConanFile):
     def build(self):
         cmake = CMake(self.settings)
         header_only = "-DHEADER_ONLY=TRUE " if self.options["Boost"].header_only else ""
-        self.run('cmake %s %s %s' % (self.conanfile_directory, cmake.command_line, header_only))
+        with_python = "-DWITH_PYTHON=True" if self.options["Boost"].python else ""
+        self.run('cmake %s %s %s %s' % (self.conanfile_directory, cmake.command_line, header_only, with_python))
         self.run("cmake --build . %s" % cmake.build_config)
 
     def imports(self):
@@ -36,3 +38,8 @@ class DefaultNameConan(ConanFile):
         self.run("cd bin && .%slambda < %s" % (os.sep, data_file))
         if not self.options["Boost"].header_only:
             self.run("cd bin && .%sregex_exe < %s" % (os.sep, data_file))
+            if self.options["Boost"].python:
+                os.chdir("bin")
+                sys.path.append(".")
+                import hello_ext
+                hello_ext.greet()

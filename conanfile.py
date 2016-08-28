@@ -7,22 +7,19 @@ class BoostConan(ConanFile):
     name = "Boost"
     version = "1.60.0"   
     settings = "os", "arch", "compiler", "build_type"   
-    FOLDER_NAME = "boost_%s" % version.replace(".", "_") 
-    options = {"shared": [True, False], "header_only": [True, False], "fPIC": [True, False]}
-    default_options = "shared=False", "header_only=False", "fPIC=False"
-    counter_config = 0
+    FOLDER_NAME = "boost_%s" % version.replace(".", "_")
+    # The current python option requires the package to be built locally, to find default Python implementation
+    options = {"shared": [True, False], "header_only": [True, False], "fPIC": [True, False], "python": [True, False]}
+    default_options = "shared=False", "header_only=False", "fPIC=False", "python=False"
     url="https://github.com/lasote/conan-boost"
     exports = ["FindBoost.cmake"]
     license="Boost Software License - Version 1.0. http://www.boost.org/LICENSE_1_0.txt"
-   
    
     def conan_info(self):
         if self.options.header_only:
             self.info.requires._data = {}
    
-    def config(self):
-        self.counter_config += 1
-        # config is called twice, one before receive the upper dependencies and another after
+    def config_options(self):
         if self.settings.compiler == "Visual Studio" and \
            self.options.shared and "MT" in str(self.settings.compiler.runtime):
             self.options.shared = False
@@ -32,22 +29,6 @@ class BoostConan(ConanFile):
                 self.options.remove("fPIC")
             except: 
                 pass
-        
-        # BZIP2 
-        if self.counter_config==2:
-            if self.settings.os == "Linux" or self.settings.os == "Macos":
-                self.requires.add("bzip2/1.0.6@lasote/stable", private=False)
-                if not self.options.header_only:
-                    self.options["bzip2/1.0.6"].shared = self.options.shared
-            self.requires.add("zlib/1.2.8@lasote/stable", private=False)
-        
-            # Header only
-            if self.options.header_only:
-                self.settings.remove("compiler")
-                self.settings.remove("os")
-                self.settings.remove("arch")
-                self.settings.remove("build_type")
-                self.options.remove("shared")
 
         if "zlib" in self.requires:
             if not self.options.header_only:
@@ -55,6 +36,22 @@ class BoostConan(ConanFile):
         if "bzip2" in self.requires:
             if not self.options.header_only:
                 self.options["bzip2"].shared = self.options.shared
+
+    def configure(self):
+        # BZIP2
+        if self.settings.os == "Linux" or self.settings.os == "Macos":
+            self.requires.add("bzip2/1.0.6@lasote/stable", private=False)
+            if not self.options.header_only:
+                self.options["bzip2/1.0.6"].shared = self.options.shared
+        self.requires.add("zlib/1.2.8@lasote/stable", private=False)
+
+        # Header only
+        if self.options.header_only:
+            self.settings.remove("compiler")
+            self.settings.remove("os")
+            self.settings.remove("arch")
+            self.settings.remove("build_type")
+            self.options.remove("shared")
 
     def source(self):
         zip_name = "%s.zip" % self.FOLDER_NAME if sys.platform == "win32" else "%s.tar.gz" % self.FOLDER_NAME
@@ -127,8 +124,9 @@ class BoostConan(ConanFile):
             deps_options = self.prepare_deps_options()
         else:
             deps_options = ""
-            
-        full_command = "cd %s && %s %s -j4 --abbreviate-paths --without-python %s" % (self.FOLDER_NAME, command, b2_flags, deps_options)
+        
+        without_python = "--without-python" if not self.options.python else ""
+        full_command = "cd %s && %s %s -j4 --abbreviate-paths %s %s" % (self.FOLDER_NAME, command, b2_flags, without_python, deps_options)
         self.output.warn(full_command)
         self.run(full_command)#, output=False)
         
@@ -147,6 +145,7 @@ class BoostConan(ConanFile):
 #             ret += "-s ZLIB_BINARY=%s -s ZLIB_INCLUDE=%s -s ZLIB_LIBPATH=%s" % (lib_name, include_path, lib_path)
 
         return ret
+
     def package(self):
         # Copy findZLIB.cmake to package
         self.copy("FindBoost.cmake", ".", ".")
@@ -173,7 +172,9 @@ class BoostConan(ConanFile):
                 "graph iostreams locale log_setup log math_c99 math_c99f math_c99l math_tr1 "
                 "math_tr1f math_tr1l program_options random regex wserialization serialization "
                 "signals coroutine context wave timer thread chrono system").split()
-        
+        if self.options.python:
+            libs.append("python")
+
         if self.settings.compiler != "Visual Studio":
             self.cpp_info.libs.extend(["boost_%s" % lib for lib in libs])
         else:
