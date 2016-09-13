@@ -30,6 +30,12 @@ class BoostConan(ConanFile):
            self.options.shared and "MT" in str(self.settings.compiler.runtime):
             self.options.shared = False
 
+        if self.options.header_only:
+            # Should be doable in conan_info() but the UX is not ready
+            self.options.remove("shared")
+            self.options.remove("fPIC")
+            self.options.remove("python")
+
     def requirements(self):
         """ Third configuration step, conditional requirements
         """
@@ -49,9 +55,6 @@ class BoostConan(ConanFile):
         if self.options.header_only:
             self.info.requires.clear()
             self.info.settings.clear()
-            self.info.options.remove("shared")
-            self.info.options.remove("fPIC")
-            self.info.options.remove("python")
 
     def source(self):
         zip_name = "%s.zip" % self.FOLDER_NAME if sys.platform == "win32" else "%s.tar.gz" % self.FOLDER_NAME
@@ -172,8 +175,11 @@ class BoostConan(ConanFile):
                 "graph iostreams locale log_setup log math_c99 math_c99f math_c99l math_tr1 "
                 "math_tr1f math_tr1l program_options random regex wserialization serialization "
                 "signals coroutine context wave timer thread chrono system").split()
+
         if self.options.python:
             libs.append("python")
+            if not self.options.shared:
+                self.cpp_info.defines.append("BOOST_PYTHON_STATIC_LIB")
 
         if self.settings.compiler != "Visual Studio":
             self.cpp_info.libs.extend(["boost_%s" % lib for lib in libs])
