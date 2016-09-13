@@ -15,43 +15,43 @@ class BoostConan(ConanFile):
     exports = ["FindBoost.cmake"]
     license="Boost Software License - Version 1.0. http://www.boost.org/LICENSE_1_0.txt"
    
-    def conan_info(self):
-        if self.options.header_only:
-            self.info.requires._data = {}
-   
     def config_options(self):
+        """ First configuration step. Only settings are defined. Options can be removed
+        according to these settings
+        """
+        if self.settings.compiler == "Visual Studio":
+            self.options.remove("fPIC")
+
+    def configure(self):
+        """ Second configuration step. Both settings and options have values, in this case
+        we can force static library if MT was specified as runtime
+        """
         if self.settings.compiler == "Visual Studio" and \
            self.options.shared and "MT" in str(self.settings.compiler.runtime):
             self.options.shared = False
-        
-        if self.settings.compiler == "Visual Studio":
-            try:
-                self.options.remove("fPIC")
-            except: 
-                pass
 
-        if "zlib" in self.requires:
-            if not self.options.header_only:
-                self.options["zlib"].shared = self.options.shared
-        if "bzip2" in self.requires:
-            if not self.options.header_only:
-                self.options["bzip2"].shared = self.options.shared
-
-    def configure(self):
-        # BZIP2
+    def requirements(self):
+        """ Third configuration step, conditional requirements
+        """
         if self.settings.os == "Linux" or self.settings.os == "Macos":
-            self.requires.add("bzip2/1.0.6@lasote/stable", private=False)
+            self.requires("bzip2/1.0.6@lasote/stable")
             if not self.options.header_only:
                 self.options["bzip2/1.0.6"].shared = self.options.shared
-        self.requires.add("zlib/1.2.8@lasote/stable", private=False)
+        self.requires("zlib/1.2.8@lasote/stable")
+        if not self.options.header_only:
+            self.options["zlib"].shared = self.options.shared
 
-        # Header only
+    def conan_info(self):
+        """ if it is header only, the requirements, settings and options do not affect the package ID
+        so they should be removed, so just 1 package for header only is generated, not one for each
+        different compiler and option. This is the last step, after build, and package
+        """
         if self.options.header_only:
-            self.settings.remove("compiler")
-            self.settings.remove("os")
-            self.settings.remove("arch")
-            self.settings.remove("build_type")
-            self.options.remove("shared")
+            self.info.requires.clear()
+            self.info.settings.clear()
+            self.info.options.remove("shared")
+            self.info.options.remove("fPIC")
+            self.info.options.remove("python")
 
     def source(self):
         zip_name = "%s.zip" % self.FOLDER_NAME if sys.platform == "win32" else "%s.tar.gz" % self.FOLDER_NAME
