@@ -41,7 +41,7 @@ IF(WIN32)
     MESSAGE("DEBUG RUNTIME: ${Boost_USE_DEBUG_RUNTIME}")
     MESSAGE("STATIC RUNTIME: ${Boost_USE_STATIC_RUNTIME}")
     
-    IF(CONANINFO_FILE MATCHES "shared=False")
+    IF(CONANINFO_FILE MATCHES "Boost:shared=False")
         SET(Boost_USE_STATIC_LIBS ON) # Removed in the original file
     ELSE()
         SET(Boost_USE_STATIC_LIBS OFF)
