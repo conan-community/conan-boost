@@ -14,6 +14,7 @@ class BoostConan(ConanFile):
     url="https://github.com/lasote/conan-boost"
     exports = ["FindBoost.cmake"]
     license="Boost Software License - Version 1.0. http://www.boost.org/LICENSE_1_0.txt"
+    short_paths = True
    
     def config_options(self):
         """ First configuration step. Only settings are defined. Options can be removed
