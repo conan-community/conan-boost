@@ -41,7 +41,8 @@ IF(WIN32)
     MESSAGE("DEBUG RUNTIME: ${Boost_USE_DEBUG_RUNTIME}")
     MESSAGE("STATIC RUNTIME: ${Boost_USE_STATIC_RUNTIME}")
     
-    IF(CONANINFO_FILE MATCHES "Boost:shared=False")
+    # The space is important, so it doesn't match the flag for zlib:shared=False
+    IF(CONANINFO_FILE MATCHES " shared=False")
         SET(Boost_USE_STATIC_LIBS ON) # Removed in the original file
     ELSE()
         SET(Boost_USE_STATIC_LIBS OFF)
@@ -49,7 +50,7 @@ IF(WIN32)
 
 ENDIF()
 
-IF(CONANINFO_FILE MATCHES "header_only=True")
+IF(CONANINFO_FILE MATCHES " header_only=True")
     MESSAGE(STATUS "DETECTED Boost HEADER ONLY PACKAGE")
     SET(BOOST_HEADER_ONLY TRUE)
     SET(Boost_FOUND TRUE)

@@ -37,9 +37,6 @@ class BoostConan(ConanFile):
             self.options.remove("fPIC")
             self.options.remove("python")
 
-    def requirements(self):
-        """ Third configuration step, conditional requirements
-        """
         if self.settings.os == "Linux" or self.settings.os == "Macos":
             self.requires("bzip2/1.0.6@lasote/stable")
             if not self.options.header_only:
