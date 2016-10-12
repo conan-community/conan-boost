@@ -1,5 +1,5 @@
 MESSAGE(STATUS "********* Conan FindBoost wrapper **********")
-SET(Boost_DEBUG 0)
+SET(Boost_DEBUG 1)
 
 # SET(BOOST_ALL_MODULES atomic chrono container context coroutine date_time exception filesystem graph iostreams locale log_setup log math_c99 math_c99f math_c99l math_tr1 math_tr1f math_tr1l prg_exec_monitor program_options random regex serialization signals system test_exec_monitor thread timer unit_test_framework wave wserialization)
   SET(BOOST_ALL_MODULES atomic chrono container context coroutine date_time           filesystem graph iostreams locale log_setup log math_c99 math_c99f math_c99l math_tr1 math_tr1f math_tr1l prg_exec_monitor program_options random regex serialization signals system                   thread timer unit_test_framework wave wserialization)
@@ -41,7 +41,8 @@ IF(WIN32)
     MESSAGE("DEBUG RUNTIME: ${Boost_USE_DEBUG_RUNTIME}")
     MESSAGE("STATIC RUNTIME: ${Boost_USE_STATIC_RUNTIME}")
     
-    IF(CONANINFO_FILE MATCHES "shared=False")
+    # The space is important, so it doesn't match the flag for zlib:shared=False
+    IF(CONANINFO_FILE MATCHES " shared=False")
         SET(Boost_USE_STATIC_LIBS ON) # Removed in the original file
     ELSE()
         SET(Boost_USE_STATIC_LIBS OFF)
@@ -49,7 +50,7 @@ IF(WIN32)
 
 ENDIF()
 
-IF(CONANINFO_FILE MATCHES "header_only=True")
+IF(CONANINFO_FILE MATCHES " header_only=True")
     MESSAGE(STATUS "DETECTED Boost HEADER ONLY PACKAGE")
     SET(BOOST_HEADER_ONLY TRUE)
     SET(Boost_FOUND TRUE)
