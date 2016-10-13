@@ -6,8 +6,8 @@ import platform, os, sys
 
 class BoostConan(ConanFile):
     name = "Boost"
-    version = "1.60.0"   
-    settings = "os", "arch", "compiler", "build_type"   
+    version = "1.60.0"
+    settings = "os", "arch", "compiler", "build_type"
     FOLDER_NAME = "boost_%s" % version.replace(".", "_")
     # The current python option requires the package to be built locally, to find default Python implementation
     options = {"shared": [True, False], "header_only": [True, False], "fPIC": [True, False], "python": [True, False]}
@@ -16,7 +16,7 @@ class BoostConan(ConanFile):
     exports = ["FindBoost.cmake"]
     license="Boost Software License - Version 1.0. http://www.boost.org/LICENSE_1_0.txt"
     short_paths = True
-   
+
     def config_options(self):
         """ First configuration step. Only settings are defined. Options can be removed
         according to these settings
@@ -73,7 +73,7 @@ class BoostConan(ConanFile):
         try:
             self.run("cd %s && %s" % (self.FOLDER_NAME, command))
         except:
-            self.run("cd %s && type bootstrap.log" % self.FOLDER_NAME 
+            self.run("cd %s && type bootstrap.log" % self.FOLDER_NAME
                      if self.settings.os == "Windows"
                      else "cd %s && cat bootstrap.log" % self.FOLDER_NAME)
             raise
@@ -89,15 +89,15 @@ class BoostConan(ConanFile):
             flags.append("runtime-link=%s" % ("static" if "MT" in str(self.settings.compiler.runtime) else "shared"))
         flags.append("variant=%s" % str(self.settings.build_type).lower())
         flags.append("address-model=%s" % ("32" if self.settings.arch == "x86" else "64"))
-        
-        
+
+
         cxx_flags = []
         # fPIC DEFINITION
         if self.settings.compiler != "Visual Studio":
             if self.options.fPIC:
                 cxx_flags.append("-fPIC")
-        
-        
+
+
         # LIBCXX DEFINITION FOR BOOST B2
         try:
             if str(self.settings.compiler.libcxx) == "libstdc++":
@@ -114,10 +114,10 @@ class BoostConan(ConanFile):
                     cxx_flags.append("-std=c++11")
         except:
             pass
-      
+
         cxx_flags = 'cxxflags="%s"' % " ".join(cxx_flags) if cxx_flags else ""
         flags.append(cxx_flags)
-      
+
         # JOIN ALL FLAGS
         b2_flags = " ".join(flags)
 
@@ -126,12 +126,12 @@ class BoostConan(ConanFile):
             deps_options = self.prepare_deps_options()
         else:
             deps_options = ""
-        
+
         without_python = "--without-python" if not self.options.python else ""
         full_command = "cd %s && %s %s -j4 --abbreviate-paths %s %s" % (self.FOLDER_NAME, command, b2_flags, without_python, deps_options)
         self.output.warn(full_command)
         self.run(full_command)#, output=False)
-        
+
     def prepare_deps_options(self):
         ret = ""
         if "bzip2" in self.requires:
@@ -159,9 +159,9 @@ class BoostConan(ConanFile):
         self.copy(pattern="*.dylib*", dst="lib", src="%s/stage/lib" % self.FOLDER_NAME)
         self.copy(pattern="*.lib", dst="lib", src="%s/stage/lib" % self.FOLDER_NAME)
         self.copy(pattern="*.dll", dst="bin", src="%s/stage/lib" % self.FOLDER_NAME)
-        
+
     def package_info(self):
-        
+
         if not self.options.header_only and self.options.shared:
             self.cpp_info.defines.append("BOOST_ALL_DYN_LINK")
         else:
@@ -187,24 +187,24 @@ class BoostConan(ConanFile):
             # http://www.boost.org/doc/libs/1_55_0/more/getting_started/windows.html
             visual_version = int(str(self.settings.compiler.version)) * 10
             runtime = "mt" # str(self.settings.compiler.runtime).lower()
-        
+
             abi_tags = []
             if self.settings.compiler.runtime in ("MTd", "MT"):
                 abi_tags.append("s")
-        
+
             if self.settings.build_type == "Debug":
                 abi_tags.append("gd")
-        
+
             abi_tags = ("-%s" % "".join(abi_tags)) if abi_tags else ""
-        
+
             version = "_".join(self.version.split(".")[0:2])
             suffix = "vc%d-%s%s-%s" %  (visual_version, runtime, abi_tags, version)
             prefix = "lib" if not self.options.shared else ""
-        
-        
+
+
             win_libs.extend(["%sboost_%s-%s" % (prefix, lib, suffix) for lib in libs if lib not in ["exception", "test_exec_monitor"]])
             win_libs.extend(["libboost_exception-%s" % suffix, "libboost_test_exec_monitor-%s" % suffix])
-        
+
             #self.output.warn("EXPORTED BOOST LIBRARIES: %s" % win_libs)
             self.cpp_info.libs.extend(win_libs)
             self.cpp_info.defines.extend(["BOOST_ALL_NO_LIB"]) # DISABLES AUTO LINKING! NO SMART AND MAGIC DECISIONS THANKS!
