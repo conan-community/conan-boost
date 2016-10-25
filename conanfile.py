@@ -3,15 +3,78 @@ from conans import tools
 import platform, os, sys
 
 
-
 class BoostConan(ConanFile):
     name = "Boost"
     version = "1.60.0"
     settings = "os", "arch", "compiler", "build_type"
     FOLDER_NAME = "boost_%s" % version.replace(".", "_")
     # The current python option requires the package to be built locally, to find default Python implementation
-    options = {"shared": [True, False], "header_only": [True, False], "fPIC": [True, False], "python": [True, False]}
-    default_options = "shared=False", "header_only=False", "fPIC=False", "python=False"
+    options = {
+        "shared": [True, False],
+        "header_only": [True, False],
+        "fPIC": [True, False],
+        "python": [True, False],
+        "atomic": [True, False],
+        "chrono": [True, False],
+        "container": [True, False],
+        "context": [True, False],
+        "coroutine": [True, False],
+        "coroutine2": [True, False],
+        "date_time": [True, False],
+        "exception": [True, False],
+        "filesystem": [True, False],
+        "graph": [True, False],
+        "graph_parallel": [True, False],
+        "iostreams": [True, False],
+        "locale": [True, False],
+        "log": [True, False],
+        "math": [True, False],
+        "mpi": [True, False],
+        "program_options": [True, False],
+        "random": [True, False],
+        "regex": [True, False],
+        "serialization": [True, False],
+        "signals": [True, False],
+        "system": [True, False],
+        "test": [True, False],
+        "thread": [True, False],
+        "timer": [True, False],
+        "type_erasure": [True, False],
+        "wave": [True, False]
+    }
+
+    default_options = "shared=True", \
+        "header_only=False", \
+        "fPIC=False", \
+        "python=False", \
+        "atomic=True", \
+        "chrono=True", \
+        "container=True", \
+        "context=True", \
+        "coroutine=True", \
+        "coroutine2=True", \
+        "date_time=True", \
+        "exception=True", \
+        "filesystem=True", \
+        "graph=True", \
+        "graph_parallel=True", \
+        "iostreams=True", \
+        "locale=True", \
+        "log=True", \
+        "math=True", \
+        "mpi=True", \
+        "program_options=True", \
+        "random=True", \
+        "regex=True", \
+        "serialization=True", \
+        "signals=True", \
+        "system=True", \
+        "test=True", \
+        "thread=True", \
+        "timer=True", \
+        "type_erasure=True", \
+        "wave=True"
+
     url="https://github.com/lasote/conan-boost"
     exports = ["FindBoost.cmake"]
     license="Boost Software License - Version 1.0. http://www.boost.org/LICENSE_1_0.txt"
@@ -90,6 +153,40 @@ class BoostConan(ConanFile):
         flags.append("variant=%s" % str(self.settings.build_type).lower())
         flags.append("address-model=%s" % ("32" if self.settings.arch == "x86" else "64"))
 
+        option_names = {
+            "--without-atomic": self.options.atomic,
+            "--without-chrono": self.options.chrono,
+            "--without-container": self.options.container,
+            "--without-coroutine": self.options.coroutine,
+            "--without-coroutine2": self.options.coroutine2,
+            "--without-date_time": self.options.date_time,
+            "--without-exception": self.options.exception,
+            "--without-filesystem": self.options.filesystem,
+            "--without-graph": self.options.graph,
+            "--without-graph_parallel": self.options.graph_parallel,
+            "--without-iostreams": self.options.iostreams,
+            "--without-locale": self.options.locale,
+            "--without-log": self.options.log,
+            "--without-math": self.options.math,
+            "--without-mpi": self.options.mpi,
+            "--without-program_options": self.options.program_options,
+            "--without-random": self.options.random,
+            "--without-regex": self.options.regex,
+            "--without-serialization": self.options.serialization,
+            "--without-signals": self.options.signals,
+            "--without-system": self.options.system,
+            "--without-test": self.options.test,
+            "--without-thread": self.options.thread,
+            "--without-timer": self.options.timer,
+            "--without-type_erasure": self.options.type_erasure,
+            "--without-wave": self.options.wave,
+            "--without-python": self.options.python
+        }
+
+        for option_name, activated in option_names.iteritems():
+            self.output.warn("%s --> %s" % (option_name, activated))
+            if not activated:
+                flags.append(option_name)
 
         cxx_flags = []
         # fPIC DEFINITION
@@ -127,8 +224,7 @@ class BoostConan(ConanFile):
         else:
             deps_options = ""
 
-        without_python = "--without-python" if not self.options.python else ""
-        full_command = "cd %s && %s %s -j4 --abbreviate-paths %s %s" % (self.FOLDER_NAME, command, b2_flags, without_python, deps_options)
+        full_command = "cd %s && %s %s -j4 --abbreviate-paths %s" % (self.FOLDER_NAME, command, b2_flags, deps_options)
         self.output.warn(full_command)
         self.run(full_command)#, output=False)
 
