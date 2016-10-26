@@ -43,7 +43,7 @@ class BoostConan(ConanFile):
         "wave": [True, False]
     }
 
-    default_options = "shared=True", \
+    default_options = "shared=False", \
         "header_only=False", \
         "fPIC=False", \
         "python=False", \
