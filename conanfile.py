@@ -224,7 +224,12 @@ class BoostConan(ConanFile):
         else:
             deps_options = ""
 
-        full_command = "cd %s && %s %s -j4 --abbreviate-paths %s" % (self.FOLDER_NAME, command, b2_flags, deps_options)
+        full_command = "cd %s && %s %s -j%s --abbreviate-paths %s" % (
+            self.FOLDER_NAME,
+            command,
+            b2_flags,
+            tools.cpu_count(),
+            deps_options)
         self.output.warn(full_command)
         self.run(full_command)#, output=False)
 
