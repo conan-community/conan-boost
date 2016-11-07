@@ -183,7 +183,6 @@ class BoostConan(ConanFile):
         }
 
         for option_name, activated in option_names.iteritems():
-            self.output.warn("%s --> %s" % (option_name, activated))
             if activated:
                 flags.append(option_name)
 
