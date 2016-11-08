@@ -8,8 +8,10 @@ environment:
     CONAN_UPLOAD: 1
     CONAN_REFERENCE: "Boost/1.60.0"
     CONAN_USERNAME: "lasote"
-    CONAN_CHANNEL: "ci"
+    CONAN_CHANNEL: "testing"
     CONAN_TOTAL_PAGES: 30
+    CONAN_STABLE_BRANCH_PATTERN: "release/*"
+    
     
     matrix:
         - CONAN_CURRENT_PAGE: 1
