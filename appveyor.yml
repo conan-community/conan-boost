@@ -12,7 +12,6 @@ environment:
     CONAN_TOTAL_PAGES: 30
     CONAN_STABLE_BRANCH_PATTERN: "release/*"
     
-    
     matrix:
         - CONAN_CURRENT_PAGE: 1
         - CONAN_CURRENT_PAGE: 2  
