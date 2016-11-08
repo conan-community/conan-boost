@@ -3,15 +3,78 @@ from conans import tools
 import platform, os, sys
 
 
-
 class BoostConan(ConanFile):
     name = "Boost"
     version = "1.60.0"
     settings = "os", "arch", "compiler", "build_type"
     FOLDER_NAME = "boost_%s" % version.replace(".", "_")
     # The current python option requires the package to be built locally, to find default Python implementation
-    options = {"shared": [True, False], "header_only": [True, False], "fPIC": [True, False], "python": [True, False]}
-    default_options = "shared=False", "header_only=False", "fPIC=False", "python=False"
+    options = {
+        "shared": [True, False],
+        "header_only": [True, False],
+        "fPIC": [True, False],
+        "python": [True, False], # Note: this variable does not have the 'without_' prefix to keep the old shas
+        "without_atomic": [True, False],
+        "without_chrono": [True, False],
+        "without_container": [True, False],
+        "without_context": [True, False],
+        "without_coroutine": [True, False],
+        "without_coroutine2": [True, False],
+        "without_date_time": [True, False],
+        "without_exception": [True, False],
+        "without_filesystem": [True, False],
+        "without_graph": [True, False],
+        "without_graph_parallel": [True, False],
+        "without_iostreams": [True, False],
+        "without_locale": [True, False],
+        "without_log": [True, False],
+        "without_math": [True, False],
+        "without_mpi": [True, False],
+        "without_program_options": [True, False],
+        "without_random": [True, False],
+        "without_regex": [True, False],
+        "without_serialization": [True, False],
+        "without_signals": [True, False],
+        "without_system": [True, False],
+        "without_test": [True, False],
+        "without_thread": [True, False],
+        "without_timer": [True, False],
+        "without_type_erasure": [True, False],
+        "without_wave": [True, False]
+    }
+
+    default_options = "shared=False", \
+        "header_only=False", \
+        "fPIC=False", \
+        "python=False", \
+        "without_atomic=False", \
+        "without_chrono=False", \
+        "without_container=False", \
+        "without_context=False", \
+        "without_coroutine=False", \
+        "without_coroutine2=False", \
+        "without_date_time=False", \
+        "without_exception=False", \
+        "without_filesystem=False", \
+        "without_graph=False", \
+        "without_graph_parallel=False", \
+        "without_iostreams=False", \
+        "without_locale=False", \
+        "without_log=False", \
+        "without_math=False", \
+        "without_mpi=False", \
+        "without_program_options=False", \
+        "without_random=False", \
+        "without_regex=False", \
+        "without_serialization=False", \
+        "without_signals=False", \
+        "without_system=False", \
+        "without_test=False", \
+        "without_thread=False", \
+        "without_timer=False", \
+        "without_type_erasure=False", \
+        "without_wave=False"
+
     url="https://github.com/lasote/conan-boost"
     exports = ["FindBoost.cmake"]
     license="Boost Software License - Version 1.0. http://www.boost.org/LICENSE_1_0.txt"
@@ -90,6 +153,38 @@ class BoostConan(ConanFile):
         flags.append("variant=%s" % str(self.settings.build_type).lower())
         flags.append("address-model=%s" % ("32" if self.settings.arch == "x86" else "64"))
 
+        option_names = {
+            "--without-atomic": self.options.without_atomic,
+            "--without-chrono": self.options.without_chrono,
+            "--without-container": self.options.without_container,
+            "--without-coroutine": self.options.without_coroutine,
+            "--without-coroutine2": self.options.without_coroutine2,
+            "--without-date_time": self.options.without_date_time,
+            "--without-exception": self.options.without_exception,
+            "--without-filesystem": self.options.without_filesystem,
+            "--without-graph": self.options.without_graph,
+            "--without-graph_parallel": self.options.without_graph_parallel,
+            "--without-iostreams": self.options.without_iostreams,
+            "--without-locale": self.options.without_locale,
+            "--without-log": self.options.without_log,
+            "--without-math": self.options.without_math,
+            "--without-mpi": self.options.without_mpi,
+            "--without-program_options": self.options.without_program_options,
+            "--without-random": self.options.without_random,
+            "--without-regex": self.options.without_regex,
+            "--without-serialization": self.options.without_serialization,
+            "--without-signals": self.options.without_signals,
+            "--without-system": self.options.without_system,
+            "--without-test": self.options.without_test,
+            "--without-thread": self.options.without_thread,
+            "--without-timer": self.options.without_timer,
+            "--without-type_erasure": self.options.without_type_erasure,
+            "--without-wave": self.options.without_wave
+        }
+
+        for option_name, activated in option_names.iteritems():
+            if activated:
+                flags.append(option_name)
 
         cxx_flags = []
         # fPIC DEFINITION
