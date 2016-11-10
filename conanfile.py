@@ -272,10 +272,10 @@ class BoostConan(ConanFile):
         if self.options.header_only:
             return
 
-        libs = ("unit_test_framework prg_exec_monitor test_exec_monitor atomic container date_time exception filesystem "
-                "graph iostreams locale log_setup log math_c99 math_c99f math_c99l math_tr1 "
+        libs = ("wave unit_test_framework prg_exec_monitor test_exec_monitor container exception "
+                "graph iostreams locale log log_setup math_c99 math_c99f math_c99l math_tr1 "
                 "math_tr1f math_tr1l program_options random regex wserialization serialization "
-                "signals coroutine context wave timer thread chrono system").split()
+                "signals coroutine context timer thread chrono date_time atomic filesystem system").split()
 
         if self.options.python:
             libs.append("python")
