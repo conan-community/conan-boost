@@ -7,9 +7,6 @@ SET(Boost_DEBUG 0)
 IF(NOT Boost_FIND_COMPONENTS)
     SET(Boost_FIND_COMPONENTS ${BOOST_ALL_MODULES})
     SET(_Boost_COMPONENTS_SEARCHED ${BOOST_ALL_MODULES})
-    foreach (module ${BOOST_ALL_MODULES})
-       SET(Boost_FIND_REQUIRED_${module} 0) # Don't crash if not found
-    endforeach()
 ENDIF()
 
 MESSAGE("COMPONENTS TO SEARCH: ${Boost_FIND_COMPONENTS}")
