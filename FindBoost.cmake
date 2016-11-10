@@ -1,6 +1,4 @@
 MESSAGE(STATUS "********* Conan FindBoost wrapper **********")
-SET(Boost_DEBUG 0)
-
 MESSAGE("COMPONENTS TO SEARCH: ${Boost_FIND_COMPONENTS}")
 
 SET(BOOST_ROOT ${CONAN_BOOST_ROOT})
