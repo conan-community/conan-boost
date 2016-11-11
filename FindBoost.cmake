@@ -36,17 +36,6 @@ IF(WIN32)
     ELSE()
         SET(Boost_USE_STATIC_LIBS OFF)
     ENDIF()
-
 ENDIF()
 
-IF(CONANINFO_FILE MATCHES " header_only=True")
-    MESSAGE(STATUS "DETECTED Boost HEADER ONLY PACKAGE")
-    SET(BOOST_HEADER_ONLY TRUE)
-    SET(Boost_FOUND TRUE)
-    SET(BOOST_FOUND TRUE)
-ENDIF()
-
-
-IF(NOT BOOST_HEADER_ONLY)
-    include("${CONAN_BOOST_ROOT}/OriginalFindBoost.cmake")
-ENDIF() # END IF HEADER_ONLY
+include("${CONAN_BOOST_ROOT}/OriginalFindBoost.cmake")
