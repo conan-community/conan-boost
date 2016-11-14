@@ -76,7 +76,7 @@ class BoostConan(ConanFile):
         "without_wave=False"
 
     url="https://github.com/lasote/conan-boost"
-    exports = ["FindBoost.cmake", "OriginalFindBoost.cmake"]
+    exports = ["FindBoost.cmake", "OriginalFindBoost*"]
     license="Boost Software License - Version 1.0. http://www.boost.org/LICENSE_1_0.txt"
     short_paths = True
 
@@ -253,7 +253,7 @@ class BoostConan(ConanFile):
     def package(self):
         # Copy findZLIB.cmake to package
         self.copy("FindBoost.cmake", ".", ".")
-        self.copy("OriginalFindBoost.cmake", ".", ".")
+        self.copy("OriginalFindBoost*", ".", ".")
 
         self.copy(pattern="*", dst="include/boost", src="%s/boost" % self.FOLDER_NAME)
         self.copy(pattern="*.a", dst="lib", src="%s/stage/lib" % self.FOLDER_NAME)
