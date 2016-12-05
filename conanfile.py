@@ -183,7 +183,7 @@ class BoostConan(ConanFile):
             "--without-wave": self.options.without_wave
         }
 
-        for option_name, activated in option_names.iteritems():
+        for option_name, activated in option_names.items():
             if activated:
                 flags.append(option_name)
 
