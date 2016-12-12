@@ -12,10 +12,10 @@ set(Boost_NO_BOOST_CMAKE ON)
 file(READ ${CONAN_BOOST_ROOT}/conaninfo.txt CONANINFO_FILE)
 if(WIN32)
     # Appends "g"
-    if(CONANINFO_FILE MATCHES "compiler.runtime=MTd" OR CONANINFO_FILE MATCHES "compiler.runtime=MDd")
-        set(Boost_USE_DEBUG_RUNTIME ON)
+    if(CONANINFO_FILE MATCHES "build_type=Debug")
+        set(Boost_USE_DEBUG_TAG ON)
     else()
-        set(Boost_USE_DEBUG_RUNTIME OFF)
+        set(Boost_USE_DEBUG_TAG OFF)
     endif()
 
     # Appends "s"
@@ -25,7 +25,7 @@ if(WIN32)
         set(Boost_USE_STATIC_RUNTIME OFF)
     endif()
 
-    message("DEBUG RUNTIME: ${Boost_USE_DEBUG_RUNTIME}")
+    message("DEBUG TAG: ${Boost_USE_DEBUG_TAG}")
     message("STATIC RUNTIME: ${Boost_USE_STATIC_RUNTIME}")
 
     # The space is important, so it doesn't match the flag for zlib:shared=False
