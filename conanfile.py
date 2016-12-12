@@ -5,7 +5,7 @@ import platform, os, sys
 
 class BoostConan(ConanFile):
     name = "Boost"
-    version = "1.60.0"
+    version = "1.62.0"
     settings = "os", "arch", "compiler", "build_type"
     FOLDER_NAME = "boost_%s" % version.replace(".", "_")
     # The current python option requires the package to be built locally, to find default Python implementation
@@ -218,36 +218,30 @@ class BoostConan(ConanFile):
         b2_flags = " ".join(flags)
 
         command = "b2" if self.settings.os == "Windows" else "./b2"
-        if self.settings.os == "Linux":
-            deps_options = self.prepare_deps_options()
-        else:
-            deps_options = ""
 
         without_python = "--without-python" if not self.options.python else ""
-        full_command = "cd %s && %s %s -j%s --abbreviate-paths %s %s" % (
+        full_command = "cd %s && %s %s -j%s --abbreviate-paths %s" % (
             self.FOLDER_NAME,
             command,
             b2_flags,
             tools.cpu_count(),
-            without_python,
-            deps_options)
+            without_python)
         self.output.warn(full_command)
-        self.run(full_command)#, output=False)
+        
+        envs = self.prepare_deps_options_env()
+        with tools.environment_append(envs):
+            self.run(full_command)#, output=False)
 
-    def prepare_deps_options(self):
-        ret = ""
-        if "bzip2" in self.requires:
-            include_path = self.deps_cpp_info["bzip2"].include_paths[0]
-            lib_path = self.deps_cpp_info["bzip2"].lib_paths[0]
-            lib_name = self.deps_cpp_info["bzip2"].libs[0]
-            ret += "-s BZIP2_BINARY=%s -s BZIP2_INCLUDE=%s -s BZIP2_LIBPATH=%s" % (lib_name, include_path, lib_path)
-#    FIXME: I think ZLIB variables should be setted now as env variables. But compilation works anyway.
-#         if "zlib" in self.requires:
-#             include_path = self.deps_cpp_info["zlib"].include_paths[0]
-#             lib_path = self.deps_cpp_info["zlib"].lib_paths[0]
-#             lib_name = self.deps_cpp_info["zlib"].libs[0]
-#             ret += "-s ZLIB_BINARY=%s -s ZLIB_INCLUDE=%s -s ZLIB_LIBPATH=%s" % (lib_name, include_path, lib_path)
-
+    def prepare_deps_options_env(self):
+        ret = {}
+#         if self.settings.os == "Linux" and "bzip2" in self.requires:
+#             include_path = self.deps_cpp_info["bzip2"].include_paths[0]
+#             lib_path = self.deps_cpp_info["bzip2"].lib_paths[0]
+#             lib_name = self.deps_cpp_info["bzip2"].libs[0]
+#             ret["BZIP2_BINARY"] = lib_name
+#             ret["BZIP2_INCLUDE"] = include_path
+#             ret["BZIP2_LIBPATH"] = lib_path
+            
         return ret
 
     def package(self):
