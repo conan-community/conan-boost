@@ -12,7 +12,7 @@ set(Boost_NO_BOOST_CMAKE ON)
 file(READ ${CONAN_BOOST_ROOT}/conaninfo.txt CONANINFO_FILE)
 if(WIN32)
     # Appends "g"
-    if(CONANINFO_FILE MATCHES "compiler.runtime=MTd" OR CONANINFO_FILE MATCHES "compiler.runtime=MDd")
+    if(CONANINFO_FILE MATCHES "build_type=Debug")
         set(Boost_USE_DEBUG_RUNTIME ON)
     else()
         set(Boost_USE_DEBUG_RUNTIME OFF)
