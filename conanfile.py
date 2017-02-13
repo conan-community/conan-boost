@@ -132,8 +132,10 @@ class BoostConan(ConanFile):
             self.output.warn("Header only package, skipping build")
             return
         command = "bootstrap" if self.settings.os == "Windows" else "./bootstrap.sh"
+        flags = []
         if self.settings.os == "Windows" and self.settings.compiler == "gcc":
             command += " mingw"
+            flags.append("--layout=system")
         try:
             self.run("cd %s && %s" % (self.FOLDER_NAME, command))
         except:
@@ -142,7 +144,6 @@ class BoostConan(ConanFile):
                      else "cd %s && cat bootstrap.log" % self.FOLDER_NAME)
             raise
 
-        flags = []
         if self.settings.compiler == "Visual Studio":
             flags.append("toolset=msvc-%s.0" % self.settings.compiler.version)
         elif str(self.settings.compiler) in ["clang", "gcc"]:
