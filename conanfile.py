@@ -277,6 +277,12 @@ class BoostConan(ConanFile):
             libs.append("python")
             if not self.options.shared:
                 self.cpp_info.defines.append("BOOST_PYTHON_STATIC_LIB")
+        # Remove excluded libraries
+        for option in self.options.fields:
+            if option.startswith('without_'):
+                lib_name = option[8:]
+                if getattr(self.options, option) and lib_name in libs:
+                    libs.remove(lib_name)
 
         if self.settings.compiler != "Visual Studio":
             self.cpp_info.libs.extend(["boost_%s" % lib for lib in libs])
