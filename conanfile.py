@@ -106,7 +106,7 @@ class BoostConan(ConanFile):
                 self.requires("bzip2/1.0.6@lasote/stable")
                 if not self.options.header_only:
                     self.options["bzip2/1.0.6"].shared = self.options.shared
-            self.requires("zlib/1.2.8@lasote/stable")
+            self.requires("zlib/1.2.11@lasote/stable")
             if not self.options.header_only:
                 self.options["zlib"].shared = self.options.shared
 
