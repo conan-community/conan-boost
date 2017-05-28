@@ -145,11 +145,7 @@ class BoostConan(ConanFile):
             raise
 
         if self.settings.compiler == "Visual Studio":
-            if self.settings.compiler.version=="15":
-                # toolset=msvc-15.0 doesn't work
-                flags.append("toolset=msvc-14.1")
-            else:
-                flags.append("toolset=msvc-%s.0" % self.settings.compiler.version)
+            flags.append("toolset=msvc-%s" % self._msvc_version())
         elif str(self.settings.compiler) in ["clang", "gcc"]:
             flags.append("toolset=%s"% self.settings.compiler)
 
@@ -293,7 +289,7 @@ class BoostConan(ConanFile):
         else:
             win_libs = []
             # http://www.boost.org/doc/libs/1_55_0/more/getting_started/windows.html
-            visual_version = int(str(self.settings.compiler.version)) * 10
+            visual_version = self._msvc_version()
             runtime = "mt" # str(self.settings.compiler.runtime).lower()
 
             abi_tags = []
@@ -316,3 +312,9 @@ class BoostConan(ConanFile):
             #self.output.warn("EXPORTED BOOST LIBRARIES: %s" % win_libs)
             self.cpp_info.libs.extend(win_libs)
             self.cpp_info.defines.extend(["BOOST_ALL_NO_LIB"]) # DISABLES AUTO LINKING! NO SMART AND MAGIC DECISIONS THANKS!
+
+    def _msvc_version(self):
+        if self.settings.compiler.version == "15":
+            return "14.1"
+        else:
+            return "%s.0" % self.settings.compiler.version
