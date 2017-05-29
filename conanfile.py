@@ -302,7 +302,7 @@ class BoostConan(ConanFile):
             abi_tags = ("-%s" % "".join(abi_tags)) if abi_tags else ""
 
             version = "_".join(self.version.split(".")[0:2])
-            suffix = "vc%s-%s%s-%s" %  (visual_version, runtime, abi_tags, version)
+            suffix = "vc%s-%s%s-%s" %  (visual_version.replace(".", ""), runtime, abi_tags, version)
             prefix = "lib" if not self.options.shared else ""
 
 
