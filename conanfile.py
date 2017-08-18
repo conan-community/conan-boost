@@ -273,7 +273,7 @@ class BoostConan(ConanFile):
         self.copy(pattern="*.lib", dst="lib", src="%s/stage/lib" % self.FOLDER_NAME)
         self.copy(pattern="*.dll", dst="bin", src="%s/stage/lib" % self.FOLDER_NAME)
 
-        if self.settings.compiler == "Visual Studio":
+        if self.settings.compiler == "Visual Studio" and self.options.shared == "False":
             # CMake findPackage help
             renames = []
             for libname in os.listdir(os.path.join(self.package_folder, "lib")):
@@ -289,10 +289,10 @@ class BoostConan(ConanFile):
 
                 renames.append([libpath, os.path.join(self.package_folder, "lib", new_name)])
 
-        for original, new in renames:
-            if original != new:
-                self.output.info("Rename: %s => %s" % (original, new))
-                os.rename(original, new)
+            for original, new in renames:
+                if original != new:
+                    self.output.info("Rename: %s => %s" % (original, new))
+                    os.rename(original, new)
 
     def package_info(self):
 
