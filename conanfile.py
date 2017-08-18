@@ -273,7 +273,8 @@ class BoostConan(ConanFile):
         self.copy(pattern="*.lib", dst="lib", src="%s/stage/lib" % self.FOLDER_NAME)
         self.copy(pattern="*.dll", dst="bin", src="%s/stage/lib" % self.FOLDER_NAME)
 
-        if self.settings.compiler == "Visual Studio" and self.options.shared == "False":
+        if not self.options.header_only and self.settings.compiler == "Visual Studio" and \
+           self.options.shared == "False":
             # CMake findPackage help
             renames = []
             for libname in os.listdir(os.path.join(self.package_folder, "lib")):

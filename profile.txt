@@ -3,7 +3,7 @@
 arch=x86
 build_type=Debug
 compiler=Visual Studio
-compiler.runtime=MDd
+compiler.runtime=MT
 compiler.version=14
 [options]
 Boost:shared=True
