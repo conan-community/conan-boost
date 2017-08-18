@@ -1,6 +1,6 @@
 from conans import ConanFile
 from conans import tools
-import platform, os, sys
+import os, sys
 
 
 class BoostConan(ConanFile):
@@ -8,12 +8,14 @@ class BoostConan(ConanFile):
     version = "1.64.0"
     settings = "os", "arch", "compiler", "build_type"
     FOLDER_NAME = "boost_%s" % version.replace(".", "_")
-    # The current python option requires the package to be built locally, to find default Python implementation
+    # The current python option requires the package to be built locally, to find default Python
+    # implementation
     options = {
         "shared": [True, False],
         "header_only": [True, False],
         "fPIC": [True, False],
-        "python": [True, False], # Note: this variable does not have the 'without_' prefix to keep the old shas
+        "python": [True, False],  # Note: this variable does not have the 'without_' prefix to keep
+        # the old shas
         "without_atomic": [True, False],
         "without_chrono": [True, False],
         "without_container": [True, False],
@@ -107,14 +109,14 @@ class BoostConan(ConanFile):
 
         if not self.options.without_iostreams:
             if self.settings.os == "Linux" or self.settings.os == "Macos":
-                self.requires("bzip2/1.0.6@lasote/stable")
+                self.requires("bzip2/1.0.6@conan/stable")
                 if not self.options.header_only:
                     self.options["bzip2/1.0.6"].shared = self.options.shared
             self.requires("zlib/1.2.11@conan/stable")
             if not self.options.header_only:
                 self.options["zlib"].shared = self.options.shared
 
-    def conan_info(self):
+    def package_id(self):
         """ if it is header only, the requirements, settings and options do not affect the package ID
         so they should be removed, so just 1 package for header only is generated, not one for each
         different compiler and option. This is the last step, after build, and package
@@ -128,15 +130,17 @@ class BoostConan(ConanFile):
         url = "http://sourceforge.net/projects/boost/files/boost/%s/%s/download" % (self.version, zip_name)
         self.output.info("Downloading %s..." % url)
         tools.download(url, zip_name)
-        tools.unzip(zip_name, ".")
+        tools.unzip(zip_name)
         os.unlink(zip_name)
 
     def build(self):
         if self.options.header_only:
             self.output.warn("Header only package, skipping build")
             return
-
-        command = "bootstrap" if self.settings.os == "Windows" else "./bootstrap.sh --with-toolset=%s"% self.settings.compiler
+        with_toolset = {"apple-clang": "darwin"}.get(str(self.settings.compiler),
+                                                     str(self.settings.compiler))
+        command = "bootstrap" if self.settings.os == "Windows" \
+                              else "./bootstrap.sh --with-toolset=%s" % with_toolset
         flags = []
         if self.settings.os == "Windows" and self.settings.compiler == "gcc":
             command += " mingw"
@@ -154,9 +158,10 @@ class BoostConan(ConanFile):
             flags.append("toolset=msvc-%s" % self._msvc_version())
         elif not self.settings.os == "Windows" and self.settings.compiler == "gcc":
             # For GCC we only need the major version otherwhise Boost doesn't find the compiler
-            flags.append("toolset=%s-%s"% (self.settings.compiler, self._gcc_short_version(self.settings.compiler.version)))
+            flags.append("toolset=%s-%s" % (self.settings.compiler,
+                                            self._gcc_short_version(self.settings.compiler.version)))
         elif str(self.settings.compiler) in ["clang", "gcc"]:
-            flags.append("toolset=%s-%s"% (self.settings.compiler, self.settings.compiler.version))
+            flags.append("toolset=%s-%s" % (self.settings.compiler, self.settings.compiler.version))
 
         flags.append("link=%s" % ("static" if not self.options.shared else "shared"))
         if self.settings.compiler == "Visual Studio" and self.settings.compiler.runtime:
@@ -206,7 +211,6 @@ class BoostConan(ConanFile):
             if self.options.fPIC:
                 cxx_flags.append("-fPIC")
 
-
         # LIBCXX DEFINITION FOR BOOST B2
         try:
             if str(self.settings.compiler.libcxx) == "libstdc++":
@@ -243,17 +247,17 @@ class BoostConan(ConanFile):
 
         envs = self.prepare_deps_options_env()
         with tools.environment_append(envs):
-            self.run(full_command)#, output=False)
+            self.run(full_command)
 
     def prepare_deps_options_env(self):
         ret = {}
-#         if self.settings.os == "Linux" and "bzip2" in self.requires:
-#             include_path = self.deps_cpp_info["bzip2"].include_paths[0]
-#             lib_path = self.deps_cpp_info["bzip2"].lib_paths[0]
-#             lib_name = self.deps_cpp_info["bzip2"].libs[0]
-#             ret["BZIP2_BINARY"] = lib_name
-#             ret["BZIP2_INCLUDE"] = include_path
-#             ret["BZIP2_LIBPATH"] = lib_path
+        if self.settings.os == "Linux" and "bzip2" in self.requires:
+             include_path = self.deps_cpp_info["bzip2"].include_paths[0]
+             lib_path = self.deps_cpp_info["bzip2"].lib_paths[0]
+             lib_name = self.deps_cpp_info["bzip2"].libs[0]
+             ret["BZIP2_BINARY"] = lib_name
+             ret["BZIP2_INCLUDE"] = include_path
+             ret["BZIP2_LIBPATH"] = lib_path
 
         return ret
 
@@ -320,9 +324,9 @@ class BoostConan(ConanFile):
             win_libs.extend(["%sboost_%s-%s" % (prefix, lib, suffix) for lib in libs if lib not in ["exception", "test_exec_monitor"]])
             win_libs.extend(["libboost_exception-%s" % suffix, "libboost_test_exec_monitor-%s" % suffix])
 
-            #self.output.warn("EXPORTED BOOST LIBRARIES: %s" % win_libs)
+            # self.output.warn("EXPORTED BOOST LIBRARIES: %s" % win_libs)
             self.cpp_info.libs.extend(win_libs)
-            self.cpp_info.defines.extend(["BOOST_ALL_NO_LIB"]) # DISABLES AUTO LINKING! NO SMART AND MAGIC DECISIONS THANKS!
+            self.cpp_info.defines.extend(["BOOST_ALL_NO_LIB"])  # DISABLES AUTO LINKING! NO SMART AND MAGIC DECISIONS THANKS!
 
     def _msvc_version(self):
         if self.settings.compiler.version == "15":
