@@ -5,33 +5,23 @@
 [Conan.io](https://conan.io) package for Boost library
 
 
-The packages generated with this **conanfile** can be found in [conan.io](https://conan.io/source/boost/1.64.0/lasote/stable).
-
-## Build packages
-
-Download conan client from [Conan.io](https://conan.io) and run:
-
-    $ python build.py
-
-## Upload packages to server
-
-    $ conan upload boost/1.64.0@lasote/stable --all
+The packages generated with this **conanfile** can be found on [bintray](https://bintray.com/conan-community).
 
 ## Reuse the packages
 
 ### Basic setup
 
-    $ conan install boost/1.64.0@lasote/stable
+    $ conan install Boost/1.64.0@conan/stable
 
 ### Project setup
 
 If you handle multiple dependencies in your project is better to add a *conanfile.txt*
 
     [requires]
-    boost/1.64.0@lasote/stable
+    Boost/1.64.0@conan/stable
 
     [options]
-    boost:shared=true # false
+    Boost:shared=true # false
     # Take a look for all available options in conanfile.py
 
     [generators]

@@ -237,12 +237,12 @@ class BoostConan(ConanFile):
         command = "b2" if self.settings.os == "Windows" else "./b2"
 
         without_python = "--without-python" if not self.options.python else ""
-        full_command = "cd %s && %s %s -j%s --abbreviate-paths %s" % (
+        full_command = "cd %s && %s %s -j%s --abbreviate-paths %s -d2" % (
             self.FOLDER_NAME,
             command,
             b2_flags,
             tools.cpu_count(),
-            without_python)
+            without_python)  # -d2 is to print more debug info and avoid travis timing out without output
         self.output.warn(full_command)
 
         envs = self.prepare_deps_options_env()
