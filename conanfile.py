@@ -159,9 +159,9 @@ class BoostConan(ConanFile):
         elif self.settings.os == "Windows" and self.settings.compiler == "gcc":
             # For GCC we only need the major version otherwhise Boost doesn't find the compiler
             flags.append("toolset=%s-%s" % (self.settings.compiler,
-                                            self._gcc_short_version(self.settings.compiler.version)))
+                                            str(self.settings.compiler.version)[0]))
         elif str(self.settings.compiler) in ["clang", "gcc"]:
-            flags.append("toolset=%s-%s" % (self.settings.compiler, self.settings.compiler.version))
+            flags.append("toolset=%s" % self.settings.compiler)
 
         flags.append("link=%s" % ("static" if not self.options.shared else "shared"))
         if self.settings.compiler == "Visual Studio" and self.settings.compiler.runtime:
@@ -333,6 +333,3 @@ class BoostConan(ConanFile):
             return "14.1"
         else:
             return "%s.0" % self.settings.compiler.version
-
-    def _gcc_short_version(self, version):
-        return str(version)[0]
