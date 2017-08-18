@@ -1,6 +1,7 @@
 PROJECT(MyHello)
 cmake_minimum_required(VERSION 2.8)
 
+set(Boost_DEBUG 1)
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 
 CONAN_BASIC_SETUP()

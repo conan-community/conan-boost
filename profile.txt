@@ -1,0 +1,12 @@
+[build_requires]
+[settings]
+arch=x86
+build_type=Debug
+compiler=Visual Studio
+compiler.runtime=MDd
+compiler.version=14
+[options]
+Boost:shared=True
+[scopes]
+[env]
+ 

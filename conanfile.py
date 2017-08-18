@@ -252,13 +252,12 @@ class BoostConan(ConanFile):
     def prepare_deps_options_env(self):
         ret = {}
         if self.settings.os == "Linux" and "bzip2" in self.requires:
-             include_path = self.deps_cpp_info["bzip2"].include_paths[0]
-             lib_path = self.deps_cpp_info["bzip2"].lib_paths[0]
-             lib_name = self.deps_cpp_info["bzip2"].libs[0]
-             ret["BZIP2_BINARY"] = lib_name
-             ret["BZIP2_INCLUDE"] = include_path
-             ret["BZIP2_LIBPATH"] = lib_path
-
+            include_path = self.deps_cpp_info["bzip2"].include_paths[0]
+            lib_path = self.deps_cpp_info["bzip2"].lib_paths[0]
+            lib_name = self.deps_cpp_info["bzip2"].libs[0]
+            ret["BZIP2_BINARY"] = lib_name
+            ret["BZIP2_INCLUDE"] = include_path
+            ret["BZIP2_LIBPATH"] = lib_path
         return ret
 
     def package(self):
@@ -273,6 +272,27 @@ class BoostConan(ConanFile):
         self.copy(pattern="*.dylib*", dst="lib", src="%s/stage/lib" % self.FOLDER_NAME)
         self.copy(pattern="*.lib", dst="lib", src="%s/stage/lib" % self.FOLDER_NAME)
         self.copy(pattern="*.dll", dst="bin", src="%s/stage/lib" % self.FOLDER_NAME)
+
+        if self.settings.compiler == "Visual Studio":
+            # CMake findPackage help
+            renames = []
+            for libname in os.listdir(os.path.join(self.package_folder, "lib")):
+                libpath = os.path.join(self.package_folder, "lib", libname)
+                new_name = libname
+                if new_name.startswith("lib"):
+                    if os.path.isfile(libpath):
+                        new_name =  libname[3:]
+                if "-s-" in libname:
+                    new_name = new_name.replace("-s-", "-")
+                elif "-sgd-" in libname:
+                    new_name = new_name.replace("-sgd-", "-gd-")
+
+                renames.append([libpath, os.path.join(self.package_folder, "lib", new_name)])
+
+        for original, new in renames:
+            self.output.info("Rename: %s => %s" % (original, new))
+            os.rename(original, new)
+
 
     def package_info(self):
 
@@ -309,8 +329,9 @@ class BoostConan(ConanFile):
             runtime = "mt" # str(self.settings.compiler.runtime).lower()
 
             abi_tags = []
-            if self.settings.compiler.runtime in ("MTd", "MT"):
-                abi_tags.append("s")
+            #if self.settings.compiler.runtime in ("MTd", "MT"):
+            #    abi_tags.append("s")
+            # Already removed in the package renaming, findPackage do not expect the -sXX-
 
             if self.settings.build_type == "Debug":
                 abi_tags.append("gd")
