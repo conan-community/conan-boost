@@ -5,7 +5,7 @@ import platform, os, sys
 
 class BoostConan(ConanFile):
     name = "Boost"
-    version = "1.62.0"
+    version = "1.64.0"
     settings = "os", "arch", "compiler", "build_type"
     FOLDER_NAME = "boost_%s" % version.replace(".", "_")
     # The current python option requires the package to be built locally, to find default Python implementation
@@ -22,6 +22,7 @@ class BoostConan(ConanFile):
         "without_coroutine2": [True, False],
         "without_date_time": [True, False],
         "without_exception": [True, False],
+        "without_fiber": [True, False],
         "without_filesystem": [True, False],
         "without_graph": [True, False],
         "without_graph_parallel": [True, False],
@@ -29,6 +30,7 @@ class BoostConan(ConanFile):
         "without_locale": [True, False],
         "without_log": [True, False],
         "without_math": [True, False],
+        "without_metaparse": [True, False],
         "without_mpi": [True, False],
         "without_program_options": [True, False],
         "without_random": [True, False],
@@ -55,6 +57,7 @@ class BoostConan(ConanFile):
         "without_coroutine2=False", \
         "without_date_time=False", \
         "without_exception=False", \
+        "without_fiber=False", \
         "without_filesystem=False", \
         "without_graph=False", \
         "without_graph_parallel=False", \
@@ -62,6 +65,7 @@ class BoostConan(ConanFile):
         "without_locale=False", \
         "without_log=False", \
         "without_math=False", \
+        "without_metaparse=False", \
         "without_mpi=False", \
         "without_program_options=False", \
         "without_random=False", \
@@ -106,7 +110,7 @@ class BoostConan(ConanFile):
                 self.requires("bzip2/1.0.6@lasote/stable")
                 if not self.options.header_only:
                     self.options["bzip2/1.0.6"].shared = self.options.shared
-            self.requires("zlib/1.2.8@lasote/stable")
+            self.requires("zlib/1.2.11@conan/stable")
             if not self.options.header_only:
                 self.options["zlib"].shared = self.options.shared
 
@@ -131,11 +135,13 @@ class BoostConan(ConanFile):
         if self.options.header_only:
             self.output.warn("Header only package, skipping build")
             return
-        command = "bootstrap" if self.settings.os == "Windows" else "./bootstrap.sh"
+
+        command = "bootstrap" if self.settings.os == "Windows" else "./bootstrap.sh --with-toolset=%s"% self.settings.compiler
         flags = []
         if self.settings.os == "Windows" and self.settings.compiler == "gcc":
             command += " mingw"
             flags.append("--layout=system")
+
         try:
             self.run("cd %s && %s" % (self.FOLDER_NAME, command))
         except:
@@ -145,9 +151,12 @@ class BoostConan(ConanFile):
             raise
 
         if self.settings.compiler == "Visual Studio":
-            flags.append("toolset=msvc-%s.0" % self.settings.compiler.version)
+            flags.append("toolset=msvc-%s" % self._msvc_version())
+        elif not self.settings.os == "Windows" and self.settings.compiler == "gcc":
+            # For GCC we only need the major version otherwhise Boost doesn't find the compiler
+            flags.append("toolset=%s-%s"% (self.settings.compiler, self._gcc_short_version(self.settings.compiler.version)))
         elif str(self.settings.compiler) in ["clang", "gcc"]:
-            flags.append("toolset=%s"% self.settings.compiler)
+            flags.append("toolset=%s-%s"% (self.settings.compiler, self.settings.compiler.version))
 
         flags.append("link=%s" % ("static" if not self.options.shared else "shared"))
         if self.settings.compiler == "Visual Studio" and self.settings.compiler.runtime:
@@ -159,10 +168,12 @@ class BoostConan(ConanFile):
             "--without-atomic": self.options.without_atomic,
             "--without-chrono": self.options.without_chrono,
             "--without-container": self.options.without_container,
+            "--without-context": self.options.without_context,
             "--without-coroutine": self.options.without_coroutine,
             "--without-coroutine2": self.options.without_coroutine2,
             "--without-date_time": self.options.without_date_time,
             "--without-exception": self.options.without_exception,
+            "--without-fiber": self.options.without_fiber,
             "--without-filesystem": self.options.without_filesystem,
             "--without-graph": self.options.without_graph,
             "--without-graph_parallel": self.options.without_graph_parallel,
@@ -170,6 +181,7 @@ class BoostConan(ConanFile):
             "--without-locale": self.options.without_locale,
             "--without-log": self.options.without_log,
             "--without-math": self.options.without_math,
+            "--without-metaparse": self.options.without_metaparse,
             "--without-mpi": self.options.without_mpi,
             "--without-program_options": self.options.without_program_options,
             "--without-random": self.options.without_random,
@@ -228,7 +240,7 @@ class BoostConan(ConanFile):
             tools.cpu_count(),
             without_python)
         self.output.warn(full_command)
-        
+
         envs = self.prepare_deps_options_env()
         with tools.environment_append(envs):
             self.run(full_command)#, output=False)
@@ -242,7 +254,7 @@ class BoostConan(ConanFile):
 #             ret["BZIP2_BINARY"] = lib_name
 #             ret["BZIP2_INCLUDE"] = include_path
 #             ret["BZIP2_LIBPATH"] = lib_path
-            
+
         return ret
 
     def package(self):
@@ -289,7 +301,7 @@ class BoostConan(ConanFile):
         else:
             win_libs = []
             # http://www.boost.org/doc/libs/1_55_0/more/getting_started/windows.html
-            visual_version = int(str(self.settings.compiler.version)) * 10
+            visual_version = self._msvc_version()
             runtime = "mt" # str(self.settings.compiler.runtime).lower()
 
             abi_tags = []
@@ -302,7 +314,7 @@ class BoostConan(ConanFile):
             abi_tags = ("-%s" % "".join(abi_tags)) if abi_tags else ""
 
             version = "_".join(self.version.split(".")[0:2])
-            suffix = "vc%d-%s%s-%s" %  (visual_version, runtime, abi_tags, version)
+            suffix = "vc%s-%s%s-%s" %  (visual_version.replace(".", ""), runtime, abi_tags, version)
             prefix = "lib" if not self.options.shared else ""
 
 
@@ -312,3 +324,12 @@ class BoostConan(ConanFile):
             #self.output.warn("EXPORTED BOOST LIBRARIES: %s" % win_libs)
             self.cpp_info.libs.extend(win_libs)
             self.cpp_info.defines.extend(["BOOST_ALL_NO_LIB"]) # DISABLES AUTO LINKING! NO SMART AND MAGIC DECISIONS THANKS!
+
+    def _msvc_version(self):
+        if self.settings.compiler.version == "15":
+            return "14.1"
+        else:
+            return "%s.0" % self.settings.compiler.version
+
+    def _gcc_short_version(self, version):
+        return str(version)[0]

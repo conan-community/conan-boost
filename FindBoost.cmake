@@ -38,7 +38,7 @@ endif()
 
 
 if (DEFINED CMAKE_VERSION AND NOT "${CMAKE_VERSION}" VERSION_LESS "3.4")
-  include("${CONAN_BOOST_ROOT}/OriginalFindBoost_3_4_3.cmake")
+  include("${CONAN_BOOST_ROOT}/OriginalFindBoost_3_8_1.cmake")
 else()
   include("${CONAN_BOOST_ROOT}/OriginalFindBoost_3_0_2.cmake")
 endif()

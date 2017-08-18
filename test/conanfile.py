@@ -5,7 +5,7 @@ import sys
 
 ############### CONFIGURE THESE VALUES ##################
 default_user = "lasote"
-default_channel = "testing"
+default_channel = "stable"
 #########################################################
 
 channel = os.getenv("CONAN_CHANNEL", default_channel)
@@ -15,7 +15,7 @@ class DefaultNameConan(ConanFile):
     name = "DefaultName"
     version = "0.1"
     settings = "os", "compiler", "arch", "build_type"
-    requires = "Boost/1.62.0@%s/%s" % (username, channel)
+    requires = "Boost/1.64.0@%s/%s" % (username, channel)
     generators = "cmake"
 
     def config(self):
@@ -32,8 +32,8 @@ class DefaultNameConan(ConanFile):
     def imports(self):
         self.copy(pattern="*.dll", dst="bin", src="bin")
         self.copy(pattern="*.dylib", dst="bin", src="lib")
-        
-    def test(self):        
+
+    def test(self):
         data_file = os.path.join(self.conanfile_directory, "data.txt")
         self.run("cd bin && .%slambda < %s" % (os.sep, data_file))
         if not self.options["Boost"].header_only:
