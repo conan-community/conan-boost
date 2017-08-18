@@ -290,9 +290,9 @@ class BoostConan(ConanFile):
                 renames.append([libpath, os.path.join(self.package_folder, "lib", new_name)])
 
         for original, new in renames:
-            self.output.info("Rename: %s => %s" % (original, new))
-            os.rename(original, new)
-
+            if original != new:
+                self.output.info("Rename: %s => %s" % (original, new))
+                os.rename(original, new)
 
     def package_info(self):
 
