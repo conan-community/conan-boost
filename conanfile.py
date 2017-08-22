@@ -156,12 +156,16 @@ class BoostConan(ConanFile):
 
         if self.settings.compiler == "Visual Studio":
             flags.append("toolset=msvc-%s" % self._msvc_version())
-        elif self.settings.os == "Windows" and self.settings.compiler == "gcc":
-            # For GCC we only need the major version otherwhise Boost doesn't find the compiler
+        elif not self.settings.os == "Windows" and self.settings.compiler == "gcc" and \
+                self.settings.compiler.version[0] >= 5:
+            # For GCC >= v5 we only need the major otherwise Boost doesn't find the compiler
+            # The NOT windows check is necessary to exclude MinGW:
             flags.append("toolset=%s-%s" % (self.settings.compiler,
                                             str(self.settings.compiler.version)[0]))
         elif str(self.settings.compiler) in ["clang", "gcc"]:
-            flags.append("toolset=%s" % self.settings.compiler)
+            # For GCC < v5 and Clang we need to provide the entire version string
+            flags.append("toolset=%s-%s" % (self.settings.compiler,
+                                            str(self.settings.compiler.version)))
 
         flags.append("link=%s" % ("static" if not self.options.shared else "shared"))
         if self.settings.compiler == "Visual Studio" and self.settings.compiler.runtime:
