@@ -107,14 +107,12 @@ class BoostConan(ConanFile):
             self.options.remove("fPIC")
             self.options.remove("python")
 
-        if not self.options.without_iostreams:
+        if not self.options.without_iostreams and not self.options.header_only:
             if self.settings.os == "Linux" or self.settings.os == "Macos":
                 self.requires("bzip2/1.0.6@conan/stable")
-                if not self.options.header_only:
-                    self.options["bzip2/1.0.6"].shared = self.options.shared
+                self.options["bzip2/1.0.6"].shared = self.options.shared
             self.requires("zlib/1.2.11@conan/stable")
-            if not self.options.header_only:
-                self.options["zlib"].shared = self.options.shared
+            self.options["zlib"].shared = self.options.shared
 
     def package_id(self):
         """ if it is header only, the requirements, settings and options do not affect the package ID
