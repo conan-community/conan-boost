@@ -32,3 +32,7 @@ IF(NOT HEADER_ONLY)
 ELSE()
 	ADD_EXECUTABLE(lambda lambda.cpp)
 ENDIF()
+
+# Test a different exe linking with the CONAN_LIBS to actually test the package_info
+ADD_EXECUTABLE(newregex regex.cpp)
+TARGET_LINK_LIBRARIES(newregex ${CONAN_LIBS})

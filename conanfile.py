@@ -139,6 +139,10 @@ class BoostConan(ConanFile):
                                                      str(self.settings.compiler))
         command = "bootstrap" if self.settings.os == "Windows" \
                               else "./bootstrap.sh --with-toolset=%s" % with_toolset
+        
+        if self.settings.os == "Windows" and self.settings.compiler == "Visual Studio":
+            command = "%s && %s" % (tools.vcvars_command(self.settings), command)
+      
         flags = []
         if self.settings.os == "Windows" and self.settings.compiler == "gcc":
             command += " mingw"
@@ -245,11 +249,13 @@ class BoostConan(ConanFile):
             b2_flags,
             tools.cpu_count(),
             without_python)  # -d2 is to print more debug info and avoid travis timing out without output
+        
+        if self.settings.os == "Windows" and self.settings.compiler == "Visual Studio":
+            full_command = "%s && %s" % (tools.vcvars_command(self.settings), full_command)
+      
         self.output.warn(full_command)
 
         envs = self.prepare_deps_options_env()
-        if self.settings.os == "Windows" and self.settings.compiler == "Visual Studio":
-            full_command = "%s && %s" (tools.vcvars_command(self.settings), full_command)
         with tools.environment_append(envs):
             self.run(full_command)
 
@@ -345,10 +351,10 @@ class BoostConan(ConanFile):
 
             version = "_".join(self.version.split(".")[0:2])
             suffix = "vc%s-%s%s-%s" %  (visual_version.replace(".", ""), runtime, abi_tags, version)
-            prefix = "lib" if not self.options.shared else ""
+            # prefix = "lib" if not self.options.shared else ""
 
-            win_libs.extend(["%sboost_%s-%s" % (prefix, lib, suffix) for lib in libs if lib not in ["exception", "test_exec_monitor"]])
-            win_libs.extend(["libboost_exception-%s" % suffix, "libboost_test_exec_monitor-%s" % suffix])
+            win_libs.extend(["boost_%s-%s" % (lib, suffix) for lib in libs if lib not in ["exception", "test_exec_monitor"]])
+            win_libs.extend(["boost_exception-%s" % suffix, "boost_test_exec_monitor-%s" % suffix])
 
             # self.output.warn("EXPORTED BOOST LIBRARIES: %s" % win_libs)
             self.cpp_info.libs.extend(win_libs)
