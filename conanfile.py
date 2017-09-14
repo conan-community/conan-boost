@@ -248,6 +248,8 @@ class BoostConan(ConanFile):
         self.output.warn(full_command)
 
         envs = self.prepare_deps_options_env()
+        if self.settings.os == "Windows" and self.settings.compiler == "Visual Studio":
+            full_command = "%s && %s" (tools.vcvars_command(self.settings), full_command)
         with tools.environment_append(envs):
             self.run(full_command)
 
