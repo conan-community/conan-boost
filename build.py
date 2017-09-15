@@ -5,8 +5,11 @@ import platform
 
 if __name__ == "__main__":
     builder = ConanMultiPackager()
-    builder.add_common_builds(shared_option_name="Boost:shared", pure_c=False)    
-    builder.add({}, {"Boost:header_only": True}, {}, {})
+    builder.add_common_builds(shared_option_name="Boost:shared", pure_c=False)
+    new_build = copy.copy(builder.builds[-1])
+    new_build[1]["Boost:header_only"] = True
+    builder.add(new_build)
+
     if platform.system() == "Linux":
         filtered_builds = []
         for settings, options, env_vars, build_requires in builder.builds:
