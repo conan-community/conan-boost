@@ -307,6 +307,9 @@ class BoostConan(ConanFile):
 
     def package_info(self):
 
+        self.cpp_info.libs = self.collect_libs()
+        self.output.info("LIBRARIES: %s" % self.cpp_info.libs)
+
         if not self.options.header_only and self.options.shared:
             self.cpp_info.defines.append("BOOST_ALL_DYN_LINK")
         else:
@@ -315,50 +318,13 @@ class BoostConan(ConanFile):
         if self.options.header_only:
             return
 
-        libs = ("wave unit_test_framework prg_exec_monitor test_exec_monitor container exception "
-                "graph iostreams locale log log_setup math_c99 math_c99f math_c99l math_tr1 "
-                "math_tr1f math_tr1l program_options random regex wserialization serialization "
-                "signals coroutine context timer thread chrono date_time atomic filesystem system").split()
-
         if self.options.python:
-            libs.append("python")
             if not self.options.shared:
                 self.cpp_info.defines.append("BOOST_PYTHON_STATIC_LIB")
-        # Remove excluded libraries
-        for option in self.options.fields:
-            if option.startswith('without_'):
-                lib_name = option[8:]
-                if getattr(self.options, option) and lib_name in libs:
-                    libs.remove(lib_name)
 
-        if self.settings.compiler != "Visual Studio":
-            self.cpp_info.libs.extend(["boost_%s" % lib for lib in libs])
-        else:
-            win_libs = []
-            # http://www.boost.org/doc/libs/1_55_0/more/getting_started/windows.html
-            visual_version = self._msvc_version()
-            runtime = "mt" # str(self.settings.compiler.runtime).lower()
-
-            abi_tags = []
-            #if self.settings.compiler.runtime in ("MTd", "MT"):
-            #    abi_tags.append("s")
-            # Already removed in the package renaming, findPackage do not expect the -sXX-
-
-            if self.settings.build_type == "Debug":
-                abi_tags.append("gd")
-
-            abi_tags = ("-%s" % "".join(abi_tags)) if abi_tags else ""
-
-            version = "_".join(self.version.split(".")[0:2])
-            suffix = "vc%s-%s%s-%s" %  (visual_version.replace(".", ""), runtime, abi_tags, version)
-            # prefix = "lib" if not self.options.shared else ""
-
-            win_libs.extend(["boost_%s-%s" % (lib, suffix) for lib in libs if lib not in ["exception", "test_exec_monitor"]])
-            win_libs.extend(["boost_exception-%s" % suffix, "boost_test_exec_monitor-%s" % suffix])
-
-            # self.output.warn("EXPORTED BOOST LIBRARIES: %s" % win_libs)
-            self.cpp_info.libs.extend(win_libs)
-            self.cpp_info.defines.extend(["BOOST_ALL_NO_LIB"])  # DISABLES AUTO LINKING! NO SMART AND MAGIC DECISIONS THANKS!
+        if self.settings.compiler == "Visual Studio":
+            # DISABLES AUTO LINKING! NO SMART AND MAGIC DECISIONS THANKS!
+            self.cpp_info.defines.extend(["BOOST_ALL_NO_LIB"])
 
     def _msvc_version(self):
         if self.settings.compiler.version == "15":
