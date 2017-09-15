@@ -270,11 +270,11 @@ class BoostConan(ConanFile):
             self.requires["zlib"].conan_reference.version,
             self.deps_cpp_info["zlib"].include_paths[0],
             self.deps_cpp_info["zlib"].lib_paths[0])
-
-        contents += "\nusing bzip2 : %s : <include>%s <search>%s ;" % (
-            self.requires["bzip2"].conan_reference.version,
-            self.deps_cpp_info["bzip2"].include_paths[0],
-            self.deps_cpp_info["bzip2"].lib_paths[0])
+        if self.settings.os == "Linux" or self.settings.os == "Macos":
+            contents += "\nusing bzip2 : %s : <include>%s <search>%s ;" % (
+                self.requires["bzip2"].conan_reference.version,
+                self.deps_cpp_info["bzip2"].include_paths[0],
+                self.deps_cpp_info["bzip2"].lib_paths[0])
 
         filename = "%s/project-config.jam" % self.FOLDER_NAME
         tools.save(filename, tools.load(filename) + contents)
