@@ -115,13 +115,8 @@ class BoostConan(ConanFile):
             self.options["zlib"].shared = self.options.shared
 
     def package_id(self):
-        """ if it is header only, the requirements, settings and options do not affect the package ID
-        so they should be removed, so just 1 package for header only is generated, not one for each
-        different compiler and option. This is the last step, after build, and package
-        """
         if self.options.header_only:
-            self.info.requires.clear()
-            self.info.settings.clear()
+            self.info.header_only()
 
     def source(self):
         zip_name = "%s.zip" % self.FOLDER_NAME if sys.platform == "win32" else "%s.tar.gz" % self.FOLDER_NAME
@@ -135,27 +130,34 @@ class BoostConan(ConanFile):
         if self.options.header_only:
             self.output.warn("Header only package, skipping build")
             return
-        with_toolset = {"apple-clang": "darwin"}.get(str(self.settings.compiler),
-                                                     str(self.settings.compiler))
-        command = "bootstrap" if self.settings.os == "Windows" \
-                              else "./bootstrap.sh --with-toolset=%s" % with_toolset
+
+        flags = self.boostrap()
+
+        self.patch_project_jam()
+
+        flags.extend(self.get_build_flags())
+
+        # JOIN ALL FLAGS
+        b2_flags = " ".join(flags)
+
+        command = "b2" if self.settings.os == "Windows" else "./b2"
+
+        without_python = "--without-python" if not self.options.python else ""
+        full_command = "cd %s && %s %s -j%s --abbreviate-paths %s -d2" % (
+            self.FOLDER_NAME,
+            command,
+            b2_flags,
+            tools.cpu_count(),
+            without_python)  # -d2 is to print more debug info and avoid travis timing out without output
         
         if self.settings.os == "Windows" and self.settings.compiler == "Visual Studio":
-            command = "%s && %s" % (tools.vcvars_command(self.settings), command)
+            full_command = "%s && %s" % (tools.vcvars_command(self.settings), full_command)
       
+        self.output.warn(full_command)
+        self.run(full_command)
+
+    def get_build_flags(self):
         flags = []
-        if self.settings.os == "Windows" and self.settings.compiler == "gcc":
-            command += " mingw"
-            flags.append("--layout=system")
-
-        try:
-            self.run("cd %s && %s" % (self.FOLDER_NAME, command))
-        except:
-            self.run("cd %s && type bootstrap.log" % self.FOLDER_NAME
-                     if self.settings.os == "Windows"
-                     else "cd %s && cat bootstrap.log" % self.FOLDER_NAME)
-            raise
-
         if self.settings.compiler == "Visual Studio":
             flags.append("toolset=msvc-%s" % self._msvc_version())
         elif not self.settings.os == "Windows" and self.settings.compiler == "gcc" and \
@@ -236,45 +238,48 @@ class BoostConan(ConanFile):
 
         cxx_flags = 'cxxflags="%s"' % " ".join(cxx_flags) if cxx_flags else ""
         flags.append(cxx_flags)
+        return flags
 
-        # JOIN ALL FLAGS
-        b2_flags = " ".join(flags)
+    def boostrap(self):
+        with_toolset = {"apple-clang": "darwin"}.get(str(self.settings.compiler),
+                                                     str(self.settings.compiler))
+        command = "bootstrap" if self.settings.os == "Windows" \
+                              else "./bootstrap.sh --with-toolset=%s" % with_toolset
 
-        command = "b2" if self.settings.os == "Windows" else "./b2"
-
-        without_python = "--without-python" if not self.options.python else ""
-        full_command = "cd %s && %s %s -j%s --abbreviate-paths %s -d2" % (
-            self.FOLDER_NAME,
-            command,
-            b2_flags,
-            tools.cpu_count(),
-            without_python)  # -d2 is to print more debug info and avoid travis timing out without output
-        
         if self.settings.os == "Windows" and self.settings.compiler == "Visual Studio":
-            full_command = "%s && %s" % (tools.vcvars_command(self.settings), full_command)
-      
-        self.output.warn(full_command)
+            command = "%s && %s" % (tools.vcvars_command(self.settings), command)
 
-        envs = self.prepare_deps_options_env()
-        with tools.environment_append(envs):
-            self.run(full_command)
+        flags = []
+        if self.settings.os == "Windows" and self.settings.compiler == "gcc":
+            command += " mingw"
+            flags.append("--layout=system")
 
-    def prepare_deps_options_env(self):
-        ret = {}
-        if self.settings.os == "Linux" and "bzip2" in self.requires:
-            include_path = self.deps_cpp_info["bzip2"].include_paths[0]
-            lib_path = self.deps_cpp_info["bzip2"].lib_paths[0]
-            lib_name = self.deps_cpp_info["bzip2"].libs[0]
-            ret["BZIP2_BINARY"] = lib_name
-            ret["BZIP2_INCLUDE"] = include_path
-            ret["BZIP2_LIBPATH"] = lib_path
-        return ret
+        try:
+            self.run("cd %s && %s" % (self.FOLDER_NAME, command))
+        except:
+            self.run("cd %s && type bootstrap.log" % self.FOLDER_NAME
+                     if self.settings.os == "Windows"
+                     else "cd %s && cat bootstrap.log" % self.FOLDER_NAME)
+            raise
+        return flags
+
+    def patch_project_jam(self):
+        self.output.warn("Patching project-config.jam")
+
+        contents = "\nusing zlib : %s : <include>%s <search>%s ;" % (
+            self.requires["zlib"].conan_reference.version,
+            self.deps_cpp_info["zlib"].include_paths[0],
+            self.deps_cpp_info["zlib"].lib_paths[0])
+
+        contents += "\nusing bzip2 : %s : <include>%s <search>%s ;" % (
+            self.requires["bzip2"].conan_reference.version,
+            self.deps_cpp_info["bzip2"].include_paths[0],
+            self.deps_cpp_info["bzip2"].lib_paths[0])
+
+        filename = "%s/project-config.jam" % self.FOLDER_NAME
+        tools.save(filename, tools.load(filename) + contents)
 
     def package(self):
-        # Copy findZLIB.cmake to package
-        self.copy("FindBoost.cmake", ".", ".")
-        self.copy("OriginalFindBoost*", ".", ".")
-
         self.copy(pattern="*", dst="include/boost", src="%s/boost" % self.FOLDER_NAME)
         self.copy(pattern="*.a", dst="lib", src="%s/stage/lib" % self.FOLDER_NAME)
         self.copy(pattern="*.so", dst="lib", src="%s/stage/lib" % self.FOLDER_NAME)
@@ -306,7 +311,6 @@ class BoostConan(ConanFile):
                     os.rename(original, new)
 
     def package_info(self):
-
         self.cpp_info.libs = self.collect_libs()
         self.output.info("LIBRARIES: %s" % self.cpp_info.libs)
 
@@ -315,16 +319,14 @@ class BoostConan(ConanFile):
         else:
             self.cpp_info.defines.append("BOOST_USE_STATIC_LIBS")
 
-        if self.options.header_only:
-            return
+        if not self.options.header_only:
+            if self.options.python:
+                if not self.options.shared:
+                    self.cpp_info.defines.append("BOOST_PYTHON_STATIC_LIB")
 
-        if self.options.python:
-            if not self.options.shared:
-                self.cpp_info.defines.append("BOOST_PYTHON_STATIC_LIB")
-
-        if self.settings.compiler == "Visual Studio":
-            # DISABLES AUTO LINKING! NO SMART AND MAGIC DECISIONS THANKS!
-            self.cpp_info.defines.extend(["BOOST_ALL_NO_LIB"])
+            if self.settings.compiler == "Visual Studio":
+                # DISABLES AUTO LINKING! NO SMART AND MAGIC DECISIONS THANKS!
+                self.cpp_info.defines.extend(["BOOST_ALL_NO_LIB"])
 
     def _msvc_version(self):
         if self.settings.compiler.version == "15":
