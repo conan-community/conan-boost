@@ -22,6 +22,30 @@ osx: &osx
    language: generic
 matrix:
    include:
+      - <<: *osx
+        osx_image: xcode9
+        env: CONAN_APPLE_CLANG_VERSIONS=9.0 CONAN_CURRENT_PAGE=1
+      - <<: *osx
+        osx_image: xcode9
+        env: CONAN_APPLE_CLANG_VERSIONS=9.0 CONAN_CURRENT_PAGE=2
+      - <<: *osx
+        osx_image: xcode9
+        env: CONAN_APPLE_CLANG_VERSIONS=9.0 CONAN_CURRENT_PAGE=3
+      - <<: *osx
+        osx_image: xcode9
+        env: CONAN_APPLE_CLANG_VERSIONS=9.0 CONAN_CURRENT_PAGE=4
+      - <<: *osx
+        osx_image: xcode9
+        env: CONAN_APPLE_CLANG_VERSIONS=9.0 CONAN_CURRENT_PAGE=5
+      - <<: *osx
+        osx_image: xcode9
+        env: CONAN_APPLE_CLANG_VERSIONS=9.0 CONAN_CURRENT_PAGE=6
+      - <<: *osx
+        osx_image: xcode9
+        env: CONAN_APPLE_CLANG_VERSIONS=9.0 CONAN_CURRENT_PAGE=7
+      - <<: *osx
+        osx_image: xcode9
+        env: CONAN_APPLE_CLANG_VERSIONS=9.0 CONAN_CURRENT_PAGE=8
 
       - <<: *linux
         env: CONAN_GCC_VERSIONS=4.9 CONAN_DOCKER_IMAGE=lasote/conangcc49 CONAN_CURRENT_PAGE=1 CONAN_TOTAL_PAGES=4
@@ -63,30 +87,6 @@ matrix:
         env: CONAN_GCC_VERSIONS=6.3 CONAN_DOCKER_IMAGE=lasote/conangcc63 CONAN_CURRENT_PAGE=7
       - <<: *linux
         env: CONAN_GCC_VERSIONS=6.3 CONAN_DOCKER_IMAGE=lasote/conangcc63 CONAN_CURRENT_PAGE=8
-      - <<: *osx
-        osx_image: xcode8.3
-        env: CONAN_APPLE_CLANG_VERSIONS=8.1 CONAN_CURRENT_PAGE=1
-      - <<: *osx
-        osx_image: xcode8.3
-        env: CONAN_APPLE_CLANG_VERSIONS=8.1 CONAN_CURRENT_PAGE=2
-      - <<: *osx
-        osx_image: xcode8.3
-        env: CONAN_APPLE_CLANG_VERSIONS=8.1 CONAN_CURRENT_PAGE=3
-      - <<: *osx
-        osx_image: xcode8.3
-        env: CONAN_APPLE_CLANG_VERSIONS=8.1 CONAN_CURRENT_PAGE=4
-      - <<: *osx
-        osx_image: xcode8.3
-        env: CONAN_APPLE_CLANG_VERSIONS=8.1 CONAN_CURRENT_PAGE=5
-      - <<: *osx
-        osx_image: xcode8.3
-        env: CONAN_APPLE_CLANG_VERSIONS=8.1 CONAN_CURRENT_PAGE=6
-      - <<: *osx
-        osx_image: xcode8.3
-        env: CONAN_APPLE_CLANG_VERSIONS=8.1 CONAN_CURRENT_PAGE=7
-      - <<: *osx
-        osx_image: xcode8.3
-        env: CONAN_APPLE_CLANG_VERSIONS=8.1 CONAN_CURRENT_PAGE=8
 
 install:
   - chmod +x .travis/install.sh
