@@ -313,11 +313,11 @@ class BoostConan(ConanFile):
     def package_info(self):
         self.cpp_info.libs = self.collect_libs()
 
-        if self.options.without_test:
+        if self.options.without_test: # remove boost_unit_test_framework
             self.cpp_info.libs = [lib for lib in self.cpp_info.libs if "unit_test" not in lib]
 
         self.output.info("LIBRARIES: %s" % self.cpp_info.libs)
-        
+
         if not self.options.header_only and self.options.shared:
             self.cpp_info.defines.append("BOOST_ALL_DYN_LINK")
         else:
