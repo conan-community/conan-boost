@@ -137,7 +137,7 @@ class BoostConan(ConanFile):
         os.unlink(zip_name)
         
         self.output.info("Patching file %s..." % "msvc.jam")
-        tools.patch(patch_file="msvc.jam-1.65.1.patch")
+        tools.patch(patch_file="patches/msvc.jam-1.65.1.patch")
 
     def build(self):
         if self.options.header_only:
