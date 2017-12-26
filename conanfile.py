@@ -113,10 +113,10 @@ class BoostConan(ConanFile):
             self.options.remove("python")
 
         if not self.options.without_iostreams and not self.options.header_only:
-            self.requires("bzip2/1.0.6@%s/%s" % (self.user, self.channel))
+            self.requires("bzip2/1.0.6@conan/stable")
             self.options["bzip2/1.0.6"].shared = self.options.shared
             
-           self.requires("zlib/1.2.11@%s/%s" % (self.user, self.channel))
+            self.requires("zlib/1.2.11@conan/stable")
             self.options["zlib"].shared = self.options.shared
 
     def package_id(self):
