@@ -4,8 +4,8 @@ import os, sys
 
 
 class BoostConan(ConanFile):
-    name = "Boost"
-    version = "1.64.0"
+    name = "boost"
+    version = "1.65.1"
     settings = "os", "arch", "compiler", "build_type"
     FOLDER_NAME = "boost_%s" % version.replace(".", "_")
     # The current python option requires the package to be built locally, to find default Python
@@ -17,6 +17,8 @@ class BoostConan(ConanFile):
         "python": [True, False],  # Note: this variable does not have the 'without_' prefix to keep
         # the old shas
         "without_atomic": [True, False],
+        #"without_beast": [True, False], # New in 1.66.0
+        #"without_callable_traits": [True, False], # New in 1.66.0
         "without_chrono": [True, False],
         "without_container": [True, False],
         "without_context": [True, False],
@@ -33,12 +35,15 @@ class BoostConan(ConanFile):
         "without_log": [True, False],
         "without_math": [True, False],
         "without_metaparse": [True, False],
+        #"without_mp11": [True, False], # New in 1.66.0
         "without_mpi": [True, False],
+        "without_poly_collection": [True, False], # New in 1.65.0
         "without_program_options": [True, False],
         "without_random": [True, False],
         "without_regex": [True, False],
         "without_serialization": [True, False],
         "without_signals": [True, False],
+        "without_stacktrace": [True, False], # New in 1.65.0
         "without_system": [True, False],
         "without_test": [True, False],
         "without_thread": [True, False],
@@ -69,11 +74,13 @@ class BoostConan(ConanFile):
         "without_math=False", \
         "without_metaparse=False", \
         "without_mpi=False", \
+        "without_poly_collection=False", \
         "without_program_options=False", \
         "without_random=False", \
         "without_regex=False", \
         "without_serialization=False", \
         "without_signals=False", \
+        "without_stacktrace=False", \
         "without_system=False", \
         "without_test=False", \
         "without_thread=False", \
@@ -83,6 +90,7 @@ class BoostConan(ConanFile):
 
     url="https://github.com/lasote/conan-boost"
     exports = ["FindBoost.cmake", "OriginalFindBoost*"]
+    exports_sources = ["patches/msvc.jam-1.65.1.patch"]
     license="Boost Software License - Version 1.0. http://www.boost.org/LICENSE_1_0.txt"
     short_paths = True
 
@@ -108,10 +116,12 @@ class BoostConan(ConanFile):
             self.options.remove("python")
 
         if not self.options.without_iostreams and not self.options.header_only:
-            if self.settings.os == "Linux" or self.settings.os == "Macos":
-                self.requires("bzip2/1.0.6@conan/stable")
-                self.options["bzip2/1.0.6"].shared = self.options.shared
-            self.requires("zlib/1.2.11@conan/stable")
+            #self.requires("bzip2/1.0.6@%s/%s" % ("kwallner", "testing"))
+            self.requires("bzip2/1.0.6@%s/%s" % (self.user, self.channel))
+            self.options["bzip2/1.0.6"].shared = self.options.shared
+            
+            #self.requires("zlib/1.2.11@%s/%s" % ("kwallner", "testing"))
+            self.requires("zlib/1.2.11@%s/%s" % (self.user, self.channel))
             self.options["zlib"].shared = self.options.shared
 
     def package_id(self):
@@ -125,6 +135,9 @@ class BoostConan(ConanFile):
         tools.download(url, zip_name)
         tools.unzip(zip_name)
         os.unlink(zip_name)
+        
+        self.output.info("Patching file %s..." % "msvc.jam")
+        tools.patch(patch_file="msvc.jam-1.65.1.patch")
 
     def build(self):
         if self.options.header_only:
@@ -133,9 +146,17 @@ class BoostConan(ConanFile):
 
         flags = self.boostrap()
 
-        self.patch_project_jam()
-
         flags.extend(self.get_build_flags())
+        
+        # Append flags for zlib
+        if not self.options.without_iostreams and not self.options.header_only:
+            flags.append("-sBZIP2_BINARY=bz2")
+            flags.append("-sBZIP2_INCLUDE=%s" % (self.deps_cpp_info["bzip2"].include_paths[0]))
+            flags.append("-sBZIP2_LIBPATH=%s" % (self.deps_cpp_info["bzip2"].lib_paths[0]))
+            
+            flags.append("-sZLIB_BINARY=zlib%s" % ("d" if self.settings.build_type == "Debug" else ""))
+            flags.append("-sZLIB_INCLUDE=%s" % (self.deps_cpp_info["zlib"].include_paths[0]))
+            flags.append("-sZLIB_LIBPATH=%s" % (self.deps_cpp_info["zlib"].lib_paths[0]))
 
         # JOIN ALL FLAGS
         b2_flags = " ".join(flags)
@@ -253,7 +274,7 @@ class BoostConan(ConanFile):
         if self.settings.os == "Windows" and self.settings.compiler == "gcc":
             command += " mingw"
             flags.append("--layout=system")
-
+            
         try:
             self.run("cd %s && %s" % (self.FOLDER_NAME, command))
         except:
@@ -262,22 +283,6 @@ class BoostConan(ConanFile):
                      else "cd %s && cat bootstrap.log" % self.FOLDER_NAME)
             raise
         return flags
-
-    def patch_project_jam(self):
-        self.output.warn("Patching project-config.jam")
-
-        contents = "\nusing zlib : %s : <include>%s <search>%s ;" % (
-            self.requires["zlib"].conan_reference.version,
-            self.deps_cpp_info["zlib"].include_paths[0].replace('\\', '/'),
-            self.deps_cpp_info["zlib"].lib_paths[0].replace('\\', '/'))
-        if self.settings.os == "Linux" or self.settings.os == "Macos":
-            contents += "\nusing bzip2 : %s : <include>%s <search>%s ;" % (
-                self.requires["bzip2"].conan_reference.version,
-                self.deps_cpp_info["bzip2"].include_paths[0].replace('\\', '/'),
-                self.deps_cpp_info["bzip2"].lib_paths[0].replace('\\', '/'))
-
-        filename = "%s/project-config.jam" % self.FOLDER_NAME
-        tools.save(filename, tools.load(filename) + contents)
 
     def package(self):
         self.copy(pattern="*", dst="include/boost", src="%s/boost" % self.FOLDER_NAME)
