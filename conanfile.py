@@ -4,7 +4,7 @@ import os, sys
 
 
 class BoostConan(ConanFile):
-    name = "boost"
+    name = "Boost"
     version = "1.65.1"
     settings = "os", "arch", "compiler", "build_type"
     FOLDER_NAME = "boost_%s" % version.replace(".", "_")
