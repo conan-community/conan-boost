@@ -17,8 +17,6 @@ class BoostConan(ConanFile):
         "python": [True, False],  # Note: this variable does not have the 'without_' prefix to keep
         # the old shas
         "without_atomic": [True, False],
-        #"without_beast": [True, False], # New in 1.66.0
-        #"without_callable_traits": [True, False], # New in 1.66.0
         "without_chrono": [True, False],
         "without_container": [True, False],
         "without_context": [True, False],
@@ -35,7 +33,6 @@ class BoostConan(ConanFile):
         "without_log": [True, False],
         "without_math": [True, False],
         "without_metaparse": [True, False],
-        #"without_mp11": [True, False], # New in 1.66.0
         "without_mpi": [True, False],
         "without_poly_collection": [True, False], # New in 1.65.0
         "without_program_options": [True, False],
@@ -116,12 +113,10 @@ class BoostConan(ConanFile):
             self.options.remove("python")
 
         if not self.options.without_iostreams and not self.options.header_only:
-            #self.requires("bzip2/1.0.6@%s/%s" % ("kwallner", "testing"))
             self.requires("bzip2/1.0.6@%s/%s" % (self.user, self.channel))
             self.options["bzip2/1.0.6"].shared = self.options.shared
             
-            #self.requires("zlib/1.2.11@%s/%s" % ("kwallner", "testing"))
-            self.requires("zlib/1.2.11@%s/%s" % (self.user, self.channel))
+           self.requires("zlib/1.2.11@%s/%s" % (self.user, self.channel))
             self.options["zlib"].shared = self.options.shared
 
     def package_id(self):
