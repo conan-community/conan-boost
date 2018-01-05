@@ -28,7 +28,7 @@ class DefaultNameConan(ConanFile):
         self.copy(pattern="*.dylib", dst="bin", src="lib")
         
     def test(self):        
-        data_file = os.path.join(self.conanfile_directory, "data.txt")
+        data_file = os.path.join(self.source_folder, "data.txt")
         self.run("cd bin && .%slambda < %s" % (os.sep, data_file))
         if not self.options["Boost"].header_only:
             self.run("cd bin && .%sregex_exe < %s" % (os.sep, data_file))
