@@ -288,7 +288,7 @@ class BoostConan(ConanFile):
             flags.append("-sBZIP2_INCLUDE=%s" % self.deps_cpp_info["bzip2"].include_paths[0])
             flags.append("-sBZIP2_LIBPATH=%s" % self.deps_cpp_info["bzip2"].lib_paths[0])
 
-            flags.append("-sZLIB_BINARY=zlib%s" % self.deps_cpp_info["zlib"].libs[0])
+            flags.append("-sZLIB_BINARY=%s" % self.deps_cpp_info["zlib"].libs[0])
             flags.append("-sZLIB_INCLUDE=%s" % self.deps_cpp_info["zlib"].include_paths[0])
             flags.append("-sZLIB_LIBPATH=%s" % self.deps_cpp_info["zlib"].lib_paths[0])
 
