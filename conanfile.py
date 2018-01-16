@@ -138,6 +138,8 @@ class BoostConan(ConanFile):
 
         b2_exe = self.bootstrap()
         flags = self.get_build_flags()
+        # Help locating bzip2 and zlib
+        self.create_user_config_jam(self.build_folder)
 
         # JOIN ALL FLAGS
         b2_flags = " ".join(flags)
@@ -145,12 +147,14 @@ class BoostConan(ConanFile):
         full_command = "%s %s -j%s --abbreviate-paths %s -d2" % (b2_exe, b2_flags, tools.cpu_count(), without_python)
         # -d2 is to print more debug info and avoid travis timing out without output
         sources = os.path.join(self.source_folder, self.folder_name)
-        full_command += ' --build-dir="%s"' % self.build_folder
+        full_command += ' --debug-configuration --build-dir="%s"' % self.build_folder
         self.output.warn(full_command)
 
         with tools.vcvars(self.settings) if self.settings.compiler == "Visual Studio" else tools.no_op():
             with tools.chdir(sources):
-                self.run(full_command)
+                # to locate user config jam (BOOST_BUILD_PATH)
+                with tools.environment_append({"BOOST_BUILD_PATH": self.build_folder}):
+                    self.run(full_command)
 
     def get_build_cross(self):
         architecture = self.settings.get_safe('arch')
@@ -282,23 +286,21 @@ class BoostConan(ConanFile):
         cxx_flags = 'cxxflags="%s"' % " ".join(cxx_flags) if cxx_flags else ""
         flags.append(cxx_flags)
 
-        # Append flags for zlib
-        if not self.options.without_iostreams and not self.options.header_only:
-            flags.append("-sBZIP2_BINARY=%s" % self.deps_cpp_info["bzip2"].libs[0])
-            flags.append("-sBZIP2_INCLUDE=%s" % self.deps_cpp_info["bzip2"].include_paths[0])
-            flags.append("-sBZIP2_LIBPATH=%s" % self.deps_cpp_info["bzip2"].lib_paths[0])
-
-            flags.append("-sZLIB_BINARY=%s" % self.deps_cpp_info["zlib"].libs[0])
-            flags.append("-sZLIB_INCLUDE=%s" % self.deps_cpp_info["zlib"].include_paths[0])
-            flags.append("-sZLIB_LIBPATH=%s" % self.deps_cpp_info["zlib"].lib_paths[0])
-
         return flags
 
-    def _vc_version(self):
-        if self.settings.compiler.version == "15":
-            return "141"
-        else:
-            return "%s" % self.settings.compiler.version
+    def create_user_config_jam(self, folder):
+        """To help locating the zlib and bzip2 deps"""
+        self.output.warn("Patching user-config.jam")
+        contents = "\nusing zlib : 1.2.11 : <include>%s <search>%s ;" % (
+            self.deps_cpp_info["zlib"].include_paths[0].replace('\\', '/'),
+            self.deps_cpp_info["zlib"].lib_paths[0].replace('\\', '/'))
+        if self.settings.os == "Linux" or self.settings.os == "Macos":
+            contents += "\nusing bzip2 : 1.0.6 : <include>%s <search>%s ;" % (
+                self.deps_cpp_info["bzip2"].include_paths[0].replace('\\', '/'),
+                self.deps_cpp_info["bzip2"].lib_paths[0].replace('\\', '/'))
+
+        filename = "%s/user-config.jam" % folder
+        tools.save(filename,  contents)
 
     ##################### BOOSTRAP METHODS ###########################
     def _get_with_toolset(self):
@@ -306,18 +308,14 @@ class BoostConan(ConanFile):
             if self.settings.compiler == "gcc":
                 return "--with-toolset=mingw"
             elif self.settings.compiler == "Visual Studio":
-                return "--with-toolset=vc%s" % self._vc_version()
+                comp_ver = self.settings.compiler.version
+                return "--with-toolset=vc%s" % "141" if comp_ver == "15" else comp_ver
         else:
             with_toolset = {"apple-clang": "darwin"}.get(str(self.settings.compiler),
                                                          str(self.settings.compiler))
             return "--with-toolset=%s" % with_toolset
 
         return ""
-
-    def _bootstrap_win(self, folder):
-        with tools.vcvars(self.settings) if self.settings.compiler == "Visual Studio" else tools.no_op():
-            with tools.chdir(folder):
-                self.run("bootstrap.bat %s" % self._get_with_toolset())
 
     def bootstrap(self):
         folder = os.path.join(self.source_folder, self.folder_name, "tools", "build")
