@@ -89,7 +89,7 @@ class BoostConan(ConanFile):
     url = "https://github.com/lasote/conan-boost"
     license = "Boost Software License - Version 1.0. http://www.boost.org/LICENSE_1_0.txt"
     short_paths = True
-    no_copy_sources = True
+    no_copy_source = True
 
     def config_options(self):
         """ First configuration step. Only settings are defined. Options can be removed
