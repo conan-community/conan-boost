@@ -2,8 +2,6 @@ from conans import ConanFile
 from conans import tools
 import os
 import sys
-from conans import __version__ as conan_version
-from conans.model.version import Version
 
 
 class BoostConan(ConanFile):
@@ -91,6 +89,7 @@ class BoostConan(ConanFile):
     url = "https://github.com/lasote/conan-boost"
     license = "Boost Software License - Version 1.0. http://www.boost.org/LICENSE_1_0.txt"
     short_paths = True
+    no_copy_sources = True
 
     def config_options(self):
         """ First configuration step. Only settings are defined. Options can be removed
@@ -115,10 +114,10 @@ class BoostConan(ConanFile):
 
         if not self.options.without_iostreams and not self.options.header_only:
             self.requires("bzip2/1.0.6@conan/stable")
-            self.options["bzip2/1.0.6"].shared = self.options.shared
+            self.options["bzip2"].shared = False
             
             self.requires("zlib/1.2.11@conan/stable")
-            self.options["zlib"].shared = self.options.shared
+            self.options["zlib"].shared = False
 
     def package_id(self):
         if self.options.header_only:
@@ -137,19 +136,20 @@ class BoostConan(ConanFile):
             self.output.warn("Header only package, skipping build")
             return
 
-        self.bootstrap()
+        b2_exe = self.bootstrap()
         flags = self.get_build_flags()
 
         # JOIN ALL FLAGS
         b2_flags = " ".join(flags)
-        command = "b2" if self.settings.os == "Windows" else "./b2"
         without_python = "--without-python" if not self.options.python else ""
-        full_command = "%s %s -j%s --abbreviate-paths %s -d2" % (command, b2_flags, tools.cpu_count(), without_python)
+        full_command = "%s %s -j%s --abbreviate-paths %s -d2" % (b2_exe, b2_flags, tools.cpu_count(), without_python)
         # -d2 is to print more debug info and avoid travis timing out without output
+        sources = os.path.join(self.source_folder, self.folder_name)
+        full_command += ' --build-dir="%s"' % self.build_folder
         self.output.warn(full_command)
 
         with tools.vcvars(self.settings) if self.settings.compiler == "Visual Studio" else tools.no_op():
-            with tools.chdir(self.folder_name):
+            with tools.chdir(sources):
                 self.run(full_command)
 
     def get_build_cross(self):
@@ -197,7 +197,9 @@ class BoostConan(ConanFile):
             flags = self.get_build_cross()
         else:
             if self.settings.compiler == "Visual Studio":
-                flags.append("toolset=msvc-%s" % self._msvc_version())
+                cversion = self.settings.compiler.version
+                _msvc_version = "14.1" if  cversion == "15" else "%s.0" % cversion
+                flags.append("toolset=msvc-%s" % _msvc_version)
             elif not self.settings.os == "Windows" and self.settings.compiler == "gcc" and \
                     str(self.settings.compiler.version)[0] >= "5":
                 # For GCC >= v5 we only need the major otherwise Boost doesn't find the compiler
@@ -282,13 +284,13 @@ class BoostConan(ConanFile):
 
         # Append flags for zlib
         if not self.options.without_iostreams and not self.options.header_only:
-            flags.append("-sBZIP2_BINARY=bz2")
-            flags.append("-sBZIP2_INCLUDE=%s" % (self.deps_cpp_info["bzip2"].include_paths[0]))
-            flags.append("-sBZIP2_LIBPATH=%s" % (self.deps_cpp_info["bzip2"].lib_paths[0]))
+            flags.append("-sBZIP2_BINARY=%s" % self.deps_cpp_info["bzip2"].libs[0])
+            flags.append("-sBZIP2_INCLUDE=%s" % self.deps_cpp_info["bzip2"].include_paths[0])
+            flags.append("-sBZIP2_LIBPATH=%s" % self.deps_cpp_info["bzip2"].lib_paths[0])
 
-            flags.append("-sZLIB_BINARY=zlib%s" % ("d" if self.settings.build_type == "Debug" else ""))
-            flags.append("-sZLIB_INCLUDE=%s" % (self.deps_cpp_info["zlib"].include_paths[0]))
-            flags.append("-sZLIB_LIBPATH=%s" % (self.deps_cpp_info["zlib"].lib_paths[0]))
+            flags.append("-sZLIB_BINARY=zlib%s" % self.deps_cpp_info["zlib"].libs[0])
+            flags.append("-sZLIB_INCLUDE=%s" % self.deps_cpp_info["zlib"].include_paths[0])
+            flags.append("-sZLIB_LIBPATH=%s" % self.deps_cpp_info["zlib"].lib_paths[0])
 
         return flags
 
@@ -299,7 +301,7 @@ class BoostConan(ConanFile):
             return "%s" % self.settings.compiler.version
 
     ##################### BOOSTRAP METHODS ###########################
-    def _get_toolset(self):
+    def _get_with_toolset(self):
         if self.settings.os == "Windows":
             if self.settings.compiler == "gcc":
                 return "--with-toolset=mingw"
@@ -315,35 +317,36 @@ class BoostConan(ConanFile):
     def _bootstrap_win(self, folder):
         with tools.vcvars(self.settings) if self.settings.compiler == "Visual Studio" else tools.no_op():
             with tools.chdir(folder):
-                self.run("bootstrap.bat %s" % self._get_toolset())
+                self.run("bootstrap.bat %s" % self._get_with_toolset())
 
     def bootstrap(self):
         folder = os.path.join(self.source_folder, self.folder_name, "tools", "build")
         try:
-            if tools.os_info.is_windows:
-                return self._bootstrap_win(folder)
-            else:
+            bootstrap = "bootstrap.bat" if tools.os_info.is_windows else "./bootstrap.sh"
+            with tools.vcvars(self.settings) if self.settings.compiler == "Visual Studio" else tools.no_op():
                 with tools.chdir(folder):
-                    self.run("./bootstrap.sh %s" % self._get_toolset())
+                    self.run("%s %s" % (bootstrap, self._get_with_toolset()))
         except Exception:
-            with tools.chdir(folder):
-                self.output.warn(tools.load(os.path.join(folder, "bootstrap.log")))
+            self.output.warn(tools.load(os.path.join(folder, "bootstrap.log")))
             raise
-        return
+        return os.path.join(folder, "b2.exe") if tools.os_info.is_windows else os.path.join(folder, "b2")
 
     ####################################################################
 
     def package(self):
+        out_lib_dir = os.path.join("boost", "bin.v2")
         self.copy(pattern="*", dst="include/boost", src="%s/boost" % self.folder_name)
-        self.copy(pattern="*.a", dst="lib", src="%s/stage/lib" % self.folder_name)
-        self.copy(pattern="*.so", dst="lib", src="%s/stage/lib" % self.folder_name)
-        self.copy(pattern="*.so.*", dst="lib", src="%s/stage/lib" % self.folder_name)
-        self.copy(pattern="*.dylib*", dst="lib", src="%s/stage/lib" % self.folder_name)
-        self.copy(pattern="*.lib", dst="lib", src="%s/stage/lib" % self.folder_name)
-        self.copy(pattern="*.dll", dst="bin", src="%s/stage/lib" % self.folder_name)
+        self.copy(pattern="*.a", dst="lib", src=out_lib_dir, keep_path=False)
+        self.copy(pattern="*.so", dst="lib", src=out_lib_dir, keep_path=False)
+        self.copy(pattern="*.so.*", dst="lib", src=out_lib_dir, keep_path=False)
+        self.copy(pattern="*.dylib*", dst="lib", src=out_lib_dir, keep_path=False)
+        self.copy(pattern="*.lib", dst="lib", src=out_lib_dir, keep_path=False)
+        self.copy(pattern="*.dll", dst="bin", src=out_lib_dir, keep_path=False)
 
-        if not self.options.header_only and self.settings.compiler == "Visual Studio" and \
-           self.options.shared == "False":
+        if not os.path.exists(os.path.join(self.package_folder, "lib")):  # First call for source_folder in local methods
+            return
+
+        if not self.options.header_only and self.settings.compiler == "Visual Studio" and self.options.shared == "False":
             # CMake findPackage help
             renames = []
             for libname in os.listdir(os.path.join(self.package_folder, "lib")):
@@ -352,6 +355,10 @@ class BoostConan(ConanFile):
                 if new_name.startswith("lib"):
                     if os.path.isfile(libpath):
                         new_name = libname[3:]
+                if "-x64-" in libname:
+                    new_name = new_name.replace("-x64-", "-")
+                if "-x32-" in libname:
+                    new_name = new_name.replace("-x32-", "-")
                 if "-s-" in libname:
                     new_name = new_name.replace("-s-", "-")
                 elif "-sgd-" in libname:
@@ -360,7 +367,7 @@ class BoostConan(ConanFile):
                 renames.append([libpath, os.path.join(self.package_folder, "lib", new_name)])
 
             for original, new in renames:
-                if original != new:
+                if original != new and not os.path.exists(new):
                     self.output.info("Rename: %s => %s" % (original, new))
                     os.rename(original, new)
 
@@ -385,9 +392,3 @@ class BoostConan(ConanFile):
             if self.settings.compiler == "Visual Studio":
                 # DISABLES AUTO LINKING! NO SMART AND MAGIC DECISIONS THANKS!
                 self.cpp_info.defines.extend(["BOOST_ALL_NO_LIB"])
-
-    def _msvc_version(self):
-        if self.settings.compiler.version == "15":
-            return "14.1"
-        else:
-            return "%s.0" % self.settings.compiler.version
