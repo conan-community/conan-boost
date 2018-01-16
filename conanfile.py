@@ -9,11 +9,8 @@ from conans.model.version import Version
 class BoostConan(ConanFile):
     name = "Boost"
     version = "1.66.0"
-    if conan_version < Version("0.99"):
-        settings = "os", "arch", "compiler", "build_type"
-    else:
-        settings = "os", "arch", "compiler", "build_type", "os_build", "arch_build"
-    FOLDER_NAME = "boost_%s" % version.replace(".", "_")
+    settings = "os", "arch", "compiler", "build_type"
+    folder_name = "boost_%s" % version.replace(".", "_")
     # The current python option requires the package to be built locally, to find default Python
     # implementation
     options = {
@@ -128,7 +125,7 @@ class BoostConan(ConanFile):
             self.info.header_only()
 
     def source(self):
-        zip_name = "%s.zip" % self.FOLDER_NAME if sys.platform == "win32" else "%s.tar.gz" % self.FOLDER_NAME
+        zip_name = "%s.zip" % self.folder_name if sys.platform == "win32" else "%s.tar.gz" % self.folder_name
         url = "http://sourceforge.net/projects/boost/files/boost/%s/%s/download" % (self.version, zip_name)
         self.output.info("Downloading %s..." % url)
         tools.download(url, zip_name)
@@ -140,38 +137,20 @@ class BoostConan(ConanFile):
             self.output.warn("Header only package, skipping build")
             return
 
-        flags = self.boostrap()
-
-        flags.extend(self.get_build_flags())
-        
-        # Append flags for zlib
-        if not self.options.without_iostreams and not self.options.header_only:
-            flags.append("-sBZIP2_BINARY=bz2")
-            flags.append("-sBZIP2_INCLUDE=%s" % (self.deps_cpp_info["bzip2"].include_paths[0]))
-            flags.append("-sBZIP2_LIBPATH=%s" % (self.deps_cpp_info["bzip2"].lib_paths[0]))
-            
-            flags.append("-sZLIB_BINARY=zlib%s" % ("d" if self.settings.build_type == "Debug" else ""))
-            flags.append("-sZLIB_INCLUDE=%s" % (self.deps_cpp_info["zlib"].include_paths[0]))
-            flags.append("-sZLIB_LIBPATH=%s" % (self.deps_cpp_info["zlib"].lib_paths[0]))
+        self.bootstrap()
+        flags = self.get_build_flags()
 
         # JOIN ALL FLAGS
         b2_flags = " ".join(flags)
-
         command = "b2" if self.settings.os == "Windows" else "./b2"
-
         without_python = "--without-python" if not self.options.python else ""
-        full_command = "cd %s && %s %s -j%s --abbreviate-paths %s -d2" % (
-            self.FOLDER_NAME,
-            command,
-            b2_flags,
-            tools.cpu_count(),
-            without_python)  # -d2 is to print more debug info and avoid travis timing out without output
-        
-        if self.settings.os == "Windows" and self.settings.compiler == "Visual Studio":
-            full_command = "%s && %s" % (tools.vcvars_command(self.settings), full_command)
-      
+        full_command = "%s %s -j%s --abbreviate-paths %s -d2" % (command, b2_flags, tools.cpu_count(), without_python)
+        # -d2 is to print more debug info and avoid travis timing out without output
         self.output.warn(full_command)
-        self.run(full_command)
+
+        with tools.vcvars(self.settings) if self.settings.compiler == "Visual Studio" else tools.no_op():
+            with tools.chdir(self.folder_name):
+                self.run(full_command)
 
     def get_build_cross(self):
         architecture = self.settings.get_safe('arch')
@@ -180,7 +159,7 @@ class BoostConan(ConanFile):
         # We only need special instructions for non-x86 CPUs.
         # # Boost seems to handle x86 just fine without modding any jam files
         cross_compiler = tools.which(os.environ['CXX'])
-        jam_filepath = os.path.join(self.source_folder, self.FOLDER_NAME, 'project-config.jam')
+        jam_filepath = os.path.join(self.source_folder, self.folder_name, 'project-config.jam')
         with open(jam_filepath, 'a') as jam_file:
             jam_file.write('\nusing {0} : {1} : {2} ;'.format(
                 self.settings.get_safe('compiler'),
@@ -207,8 +186,12 @@ class BoostConan(ConanFile):
         return flags
 
     def get_build_flags(self):
+
         architecture = self.settings.get_safe('arch')
         flags = []
+
+        if self.settings.compiler == "gcc":
+            flags.append("--layout=system")
 
         if tools.cross_building(self.settings) and architecture not in ['x86', 'x86_64']:
             flags = self.get_build_cross()
@@ -296,39 +279,68 @@ class BoostConan(ConanFile):
 
         cxx_flags = 'cxxflags="%s"' % " ".join(cxx_flags) if cxx_flags else ""
         flags.append(cxx_flags)
+
+        # Append flags for zlib
+        if not self.options.without_iostreams and not self.options.header_only:
+            flags.append("-sBZIP2_BINARY=bz2")
+            flags.append("-sBZIP2_INCLUDE=%s" % (self.deps_cpp_info["bzip2"].include_paths[0]))
+            flags.append("-sBZIP2_LIBPATH=%s" % (self.deps_cpp_info["bzip2"].lib_paths[0]))
+
+            flags.append("-sZLIB_BINARY=zlib%s" % ("d" if self.settings.build_type == "Debug" else ""))
+            flags.append("-sZLIB_INCLUDE=%s" % (self.deps_cpp_info["zlib"].include_paths[0]))
+            flags.append("-sZLIB_LIBPATH=%s" % (self.deps_cpp_info["zlib"].lib_paths[0]))
+
         return flags
 
-    def boostrap(self):
-        with_toolset = {"apple-clang": "darwin"}.get(str(self.settings.compiler),
-                                                     str(self.settings.compiler))
-        command = "bootstrap" if self.settings.os_build == "Windows" \
-                              else "./bootstrap.sh --with-toolset=%s" % with_toolset
+    def _vc_version(self):
+        if self.settings.compiler.version == "15":
+            return "141"
+        else:
+            return "%s" % self.settings.compiler.version
 
-        if self.settings.os == "Windows" and self.settings.compiler == "Visual Studio":
-            command = "%s && %s" % (tools.vcvars_command(self.settings), command)
+    ##################### BOOSTRAP METHODS ###########################
+    def _get_toolset(self):
+        if self.settings.os == "Windows":
+            if self.settings.compiler == "gcc":
+                return "--with-toolset=mingw"
+            elif self.settings.compiler == "Visual Studio":
+                return "--with-toolset=vc%s" % self._vc_version()
+        else:
+            with_toolset = {"apple-clang": "darwin"}.get(str(self.settings.compiler),
+                                                         str(self.settings.compiler))
+            return "--with-toolset=%s" % with_toolset
 
-        flags = []
-        if self.settings.os_build == "Windows" and self.settings.compiler == "gcc":
-            command += " mingw"
-            flags.append("--layout=system")
-            
+        return ""
+
+    def _bootstrap_win(self, folder):
+        with tools.vcvars(self.settings) if self.settings.compiler == "Visual Studio" else tools.no_op():
+            with tools.chdir(folder):
+                self.run("bootstrap.bat %s" % self._get_toolset())
+
+    def bootstrap(self):
+        folder = os.path.join(self.source_folder, self.folder_name, "tools", "build")
         try:
-            self.run("cd %s && %s" % (self.FOLDER_NAME, command))
-        except:
-            self.run("cd %s && type bootstrap.log" % self.FOLDER_NAME
-                     if self.settings.os_build == "Windows"
-                     else "cd %s && cat bootstrap.log" % self.FOLDER_NAME)
+            if tools.os_info.is_windows:
+                return self._bootstrap_win(folder)
+            else:
+                with tools.chdir(folder):
+                    self.run("./bootstrap.sh %s" % self._get_toolset())
+        except Exception:
+            with tools.chdir(folder):
+                self.output.warn(tools.load(os.path.join(folder, "bootstrap.log")))
             raise
-        return flags
+        return
+
+    ####################################################################
 
     def package(self):
-        self.copy(pattern="*", dst="include/boost", src="%s/boost" % self.FOLDER_NAME)
-        self.copy(pattern="*.a", dst="lib", src="%s/stage/lib" % self.FOLDER_NAME)
-        self.copy(pattern="*.so", dst="lib", src="%s/stage/lib" % self.FOLDER_NAME)
-        self.copy(pattern="*.so.*", dst="lib", src="%s/stage/lib" % self.FOLDER_NAME)
-        self.copy(pattern="*.dylib*", dst="lib", src="%s/stage/lib" % self.FOLDER_NAME)
-        self.copy(pattern="*.lib", dst="lib", src="%s/stage/lib" % self.FOLDER_NAME)
-        self.copy(pattern="*.dll", dst="bin", src="%s/stage/lib" % self.FOLDER_NAME)
+        self.copy(pattern="*", dst="include/boost", src="%s/boost" % self.folder_name)
+        self.copy(pattern="*.a", dst="lib", src="%s/stage/lib" % self.folder_name)
+        self.copy(pattern="*.so", dst="lib", src="%s/stage/lib" % self.folder_name)
+        self.copy(pattern="*.so.*", dst="lib", src="%s/stage/lib" % self.folder_name)
+        self.copy(pattern="*.dylib*", dst="lib", src="%s/stage/lib" % self.folder_name)
+        self.copy(pattern="*.lib", dst="lib", src="%s/stage/lib" % self.folder_name)
+        self.copy(pattern="*.dll", dst="bin", src="%s/stage/lib" % self.folder_name)
 
         if not self.options.header_only and self.settings.compiler == "Visual Studio" and \
            self.options.shared == "False":
