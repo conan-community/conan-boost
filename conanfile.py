@@ -303,17 +303,17 @@ class BoostConan(ConanFile):
         tools.save(filename,  contents)
 
     ##################### BOOSTRAP METHODS ###########################
-    def _get_with_toolset(self):
+    def _get_boostrap_toolset(self):
         if self.settings.os == "Windows":
             if self.settings.compiler == "gcc":
-                return "--with-toolset=mingw"
+                return "mingw"
             elif self.settings.compiler == "Visual Studio":
                 comp_ver = self.settings.compiler.version
-                return "--with-toolset=vc%s" % "141" if comp_ver == "15" else comp_ver
+                return "vc%s" % ("141" if comp_ver == "15" else comp_ver)
         else:
             with_toolset = {"apple-clang": "darwin"}.get(str(self.settings.compiler),
                                                          str(self.settings.compiler))
-            return "--with-toolset=%s" % with_toolset
+            return with_toolset
 
         return ""
 
@@ -322,8 +322,9 @@ class BoostConan(ConanFile):
         try:
             bootstrap = "bootstrap.bat" if tools.os_info.is_windows else "./bootstrap.sh"
             with tools.vcvars(self.settings) if self.settings.compiler == "Visual Studio" else tools.no_op():
+                self.output.warn(str(self.settings.compiler.version))
                 with tools.chdir(folder):
-                    self.run("%s %s" % (bootstrap, self._get_with_toolset()))
+                    self.run("%s %s" % (bootstrap, self._get_boostrap_toolset()))
         except Exception:
             self.output.warn(tools.load(os.path.join(folder, "bootstrap.log")))
             raise

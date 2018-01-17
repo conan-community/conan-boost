@@ -9,7 +9,6 @@ environment:
     CONAN_USERNAME: "conan"
     CONAN_LOGIN_USERNAME: "lasote"
     CONAN_CHANNEL: "testing"
-    VS150COMNTOOLS: "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\Common7\\Tools\\"
     CONAN_UPLOAD: "https://api.bintray.com/conan/conan-community/conan"
     CONAN_STABLE_BRANCH_PATTERN: "release/*"
     CONAN_TOTAL_PAGES: 4
