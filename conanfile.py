@@ -3,6 +3,12 @@ from conans import tools
 import os
 import sys
 
+# From from *1 (see below, b2 --show-libraries)
+lib_list = ["atomic", "chrono", "container","context", "coroutine", "date_time", "exception", "fiber", "filesystem",
+            "graph", "graph_parallel", "iostreams", "locale", "log", "math", "mpi", "program_options", "python",
+            "random", "regex", "serialization", "signals", "stacktrace", "system", "test", "thread", "timer",
+            "type_erasure", "wave"]
+
 
 class BoostConan(ConanFile):
     name = "Boost"
@@ -14,77 +20,14 @@ class BoostConan(ConanFile):
     options = {
         "shared": [True, False],
         "header_only": [True, False],
-        "fPIC": [True, False],
-        "python": [True, False],  # Note: this variable does not have the 'without_' prefix to keep
-        # the old shas
-        "without_atomic": [True, False],
-        "without_chrono": [True, False],
-        "without_container": [True, False],
-        "without_context": [True, False],
-        "without_coroutine": [True, False],
-        "without_coroutine2": [True, False],
-        "without_date_time": [True, False],
-        "without_exception": [True, False],
-        "without_fiber": [True, False],
-        "without_filesystem": [True, False],
-        "without_graph": [True, False],
-        "without_graph_parallel": [True, False],
-        "without_iostreams": [True, False],
-        "without_locale": [True, False],
-        "without_log": [True, False],
-        "without_math": [True, False],
-        "without_metaparse": [True, False],
-        "without_mpi": [True, False],
-        "without_poly_collection": [True, False],  # New in 1.65.0
-        "without_program_options": [True, False],
-        "without_random": [True, False],
-        "without_regex": [True, False],
-        "without_serialization": [True, False],
-        "without_signals": [True, False],
-        "without_stacktrace": [True, False],  # New in 1.65.0
-        "without_system": [True, False],
-        "without_test": [True, False],
-        "without_thread": [True, False],
-        "without_timer": [True, False],
-        "without_type_erasure": [True, False],
-        "without_wave": [True, False]
+        "fPIC": [True, False]
     }
+    options.update({"without_%s" % libname: [True, False] for libname in lib_list})
 
-    default_options = "shared=False", \
-        "header_only=False", \
-        "fPIC=False", \
-        "python=False", \
-        "without_atomic=False", \
-        "without_chrono=False", \
-        "without_container=False", \
-        "without_context=False", \
-        "without_coroutine=False", \
-        "without_coroutine2=False", \
-        "without_date_time=False", \
-        "without_exception=False", \
-        "without_fiber=False", \
-        "without_filesystem=False", \
-        "without_graph=False", \
-        "without_graph_parallel=False", \
-        "without_iostreams=False", \
-        "without_locale=False", \
-        "without_log=False", \
-        "without_math=False", \
-        "without_metaparse=False", \
-        "without_mpi=False", \
-        "without_poly_collection=False", \
-        "without_program_options=False", \
-        "without_random=False", \
-        "without_regex=False", \
-        "without_serialization=False", \
-        "without_signals=False", \
-        "without_stacktrace=False", \
-        "without_system=False", \
-        "without_test=False", \
-        "without_thread=False", \
-        "without_timer=False", \
-        "without_type_erasure=False", \
-        "without_wave=False"
+    default_options = ["shared=False", "header_only=False", "fPIC=False"]
+    default_options.extend(["without_%s=False" % libname for libname in lib_list if libname != "python"])
+    default_options.append("without_python=True")
+    default_options = tuple(default_options)
 
     url = "https://github.com/lasote/conan-boost"
     license = "Boost Software License - Version 1.0. http://www.boost.org/LICENSE_1_0.txt"
@@ -92,26 +35,10 @@ class BoostConan(ConanFile):
     no_copy_source = True
 
     def config_options(self):
-        """ First configuration step. Only settings are defined. Options can be removed
-        according to these settings
-        """
         if self.settings.compiler == "Visual Studio":
             self.options.remove("fPIC")
 
     def configure(self):
-        """ Second configuration step. Both settings and options have values, in this case
-        we can force static library if MT was specified as runtime
-        """
-        if self.settings.compiler == "Visual Studio" and \
-           self.options.shared and "MT" in str(self.settings.compiler.runtime):
-            self.options.shared = False
-
-        if self.options.header_only:
-            # Should be doable in conan_info() but the UX is not ready
-            self.options.remove("shared")
-            self.options.remove("fPIC")
-            self.options.remove("python")
-
         if not self.options.without_iostreams and not self.options.header_only:
             self.requires("bzip2/1.0.6@conan/stable")
             self.options["bzip2"].shared = False
@@ -143,8 +70,7 @@ class BoostConan(ConanFile):
 
         # JOIN ALL FLAGS
         b2_flags = " ".join(flags)
-        without_python = "--without-python" if not self.options.python else ""
-        full_command = "%s %s -j%s --abbreviate-paths %s -d2" % (b2_exe, b2_flags, tools.cpu_count(), without_python)
+        full_command = "%s %s -j%s --abbreviate-paths -d2" % (b2_exe, b2_flags, tools.cpu_count())
         # -d2 is to print more debug info and avoid travis timing out without output
         sources = os.path.join(self.source_folder, self.folder_name)
         full_command += ' --debug-configuration --build-dir="%s"' % self.build_folder
@@ -154,6 +80,8 @@ class BoostConan(ConanFile):
             with tools.chdir(sources):
                 # to locate user config jam (BOOST_BUILD_PATH)
                 with tools.environment_append({"BOOST_BUILD_PATH": self.build_folder}):
+                    # To show the libraries *1
+                    # self.run("%s --show-libraries" % b2_exe)
                     self.run(full_command)
 
     def get_build_cross(self):
@@ -224,41 +152,9 @@ class BoostConan(ConanFile):
         elif architecture == 'x86_64':
             flags.append('address-model=64')
 
-        option_names = {
-            "--without-atomic": self.options.without_atomic,
-            "--without-chrono": self.options.without_chrono,
-            "--without-container": self.options.without_container,
-            "--without-context": self.options.without_context,
-            "--without-coroutine": self.options.without_coroutine,
-            "--without-coroutine2": self.options.without_coroutine2,
-            "--without-date_time": self.options.without_date_time,
-            "--without-exception": self.options.without_exception,
-            "--without-fiber": self.options.without_fiber,
-            "--without-filesystem": self.options.without_filesystem,
-            "--without-graph": self.options.without_graph,
-            "--without-graph_parallel": self.options.without_graph_parallel,
-            "--without-iostreams": self.options.without_iostreams,
-            "--without-locale": self.options.without_locale,
-            "--without-log": self.options.without_log,
-            "--without-math": self.options.without_math,
-            "--without-metaparse": self.options.without_metaparse,
-            "--without-mpi": self.options.without_mpi,
-            "--without-program_options": self.options.without_program_options,
-            "--without-random": self.options.without_random,
-            "--without-regex": self.options.without_regex,
-            "--without-serialization": self.options.without_serialization,
-            "--without-signals": self.options.without_signals,
-            "--without-system": self.options.without_system,
-            "--without-test": self.options.without_test,
-            "--without-thread": self.options.without_thread,
-            "--without-timer": self.options.without_timer,
-            "--without-type_erasure": self.options.without_type_erasure,
-            "--without-wave": self.options.without_wave
-        }
-
-        for option_name, activated in option_names.items():
-            if activated:
-                flags.append(option_name)
+        for libname in lib_list:
+            if getattr(self.options, "without_%s" % libname):
+                flags.append("--without-%s" % libname)
 
         cxx_flags = []
         # fPIC DEFINITION
@@ -322,7 +218,7 @@ class BoostConan(ConanFile):
         try:
             bootstrap = "bootstrap.bat" if tools.os_info.is_windows else "./bootstrap.sh"
             with tools.vcvars(self.settings) if self.settings.compiler == "Visual Studio" else tools.no_op():
-                self.output.warn(str(self.settings.compiler.version))
+                self.output.info("Using Visual Studio %s" % str(self.settings.compiler.version))
                 with tools.chdir(folder):
                     self.run("%s %s" % (bootstrap, self._get_boostrap_toolset()))
         except Exception:
@@ -384,7 +280,7 @@ class BoostConan(ConanFile):
             self.cpp_info.defines.append("BOOST_USE_STATIC_LIBS")
 
         if not self.options.header_only:
-            if self.options.python:
+            if not self.options.without_python:
                 if not self.options.shared:
                     self.cpp_info.defines.append("BOOST_PYTHON_STATIC_LIB")
 
