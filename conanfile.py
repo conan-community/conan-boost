@@ -241,30 +241,35 @@ class BoostConan(ConanFile):
         if not os.path.exists(os.path.join(self.package_folder, "lib")):  # First call for source_folder in local methods
             return
 
-        if not self.options.header_only and self.settings.compiler == "Visual Studio" and self.options.shared == "False":
-            # CMake findPackage help
-            renames = []
-            for libname in os.listdir(os.path.join(self.package_folder, "lib")):
-                libpath = os.path.join(self.package_folder, "lib", libname)
-                new_name = libname
-                if new_name.startswith("lib"):
-                    if os.path.isfile(libpath):
-                        new_name = libname[3:]
-                if "-x64-" in libname:
-                    new_name = new_name.replace("-x64-", "-")
-                if "-x32-" in libname:
-                    new_name = new_name.replace("-x32-", "-")
-                if "-s-" in libname:
-                    new_name = new_name.replace("-s-", "-")
-                elif "-sgd-" in libname:
-                    new_name = new_name.replace("-sgd-", "-gd-")
+        self.renames_to_make_cmake_find_package_happy()
 
-                renames.append([libpath, os.path.join(self.package_folder, "lib", new_name)])
+    def renames_to_make_cmake_find_package_happy(self):
+        # CMake findPackage help
+        renames = []
+        for libname in os.listdir(os.path.join(self.package_folder, "lib")):
+            libpath = os.path.join(self.package_folder, "lib", libname)
+            new_name = libname
+            if new_name.startswith("lib"):
+                if os.path.isfile(libpath):
+                    new_name = libname[3:]
+            if new_name.endswith(str(self.version)):
+                if os.path.isfile(libpath):
+                    new_name = libname[0:(-1*(len(str(self.version))))-1]
+            if "-x64-" in libname:
+                new_name = new_name.replace("-x64-", "-")
+            if "-x32-" in libname:
+                new_name = new_name.replace("-x32-", "-")
+            if "-s-" in libname:
+                new_name = new_name.replace("-s-", "-")
+            elif "-sgd-" in libname:
+                new_name = new_name.replace("-sgd-", "-gd-")
 
-            for original, new in renames:
-                if original != new and not os.path.exists(new):
-                    self.output.info("Rename: %s => %s" % (original, new))
-                    os.rename(original, new)
+            renames.append([libpath, os.path.join(self.package_folder, "lib", new_name)])
+
+        for original, new in renames:
+            if original != new and not os.path.exists(new):
+                self.output.info("Rename: %s => %s" % (original, new))
+                os.rename(original, new)
 
     def package_info(self):
         self.cpp_info.libs = tools.collect_libs(self)
