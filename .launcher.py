@@ -11,11 +11,9 @@ env = {"CONAN_USERNAME": "lasote",
 
 if platform.system() == "Windows":
     env["CONAN_VISUAL_VERSIONS"] = "15, 14, 12"
-
-if platform.system() == "Linux":
+elif platform.system() == "Linux":
     env["CONAN_GCC_VERSIONS"] = "4.9, 5, 6, 7"
     env["CONAN_USE_DOCKER"] = "1"
-
 elif platform.system() == "Darwin":
     from conans.client.conf.detect import _get_default_compiler
     _ , version = _get_default_compiler(ConanOutput(stream=sys.stdout))
