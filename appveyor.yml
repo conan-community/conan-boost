@@ -16,36 +16,36 @@ environment:
 
     matrix:
 
-        - MINGW_CONFIGURATIONS: "6.3@x86_64@seh@posix"
+        - MINGW_CONFIGURATIONS: "6@x86_64@seh@posix"
           CONAN_BASH_PATH: "c:\\msys64\\usr\\bin\\bash"
           CONAN_CURRENT_PAGE: 1
 
-        - MINGW_CONFIGURATIONS: "6.3@x86_64@seh@posix"
+        - MINGW_CONFIGURATIONS: "6@x86_64@seh@posix"
           CONAN_BASH_PATH: "c:\\msys64\\usr\\bin\\bash"
           CONAN_CURRENT_PAGE: 2
 
-        - MINGW_CONFIGURATIONS: "6.3@x86_64@seh@posix"
+        - MINGW_CONFIGURATIONS: "6@x86_64@seh@posix"
           CONAN_BASH_PATH: "c:\\msys64\\usr\\bin\\bash"
           CONAN_CURRENT_PAGE: 3
 
-        - MINGW_CONFIGURATIONS: "6.3@x86_64@seh@posix"
+        - MINGW_CONFIGURATIONS: "6@x86_64@seh@posix"
           CONAN_BASH_PATH: "c:\\msys64\\usr\\bin\\bash"
           CONAN_CURRENT_PAGE: 4
 
 
-        - MINGW_CONFIGURATIONS: "7.1@x86_64@seh@posix"
+        - MINGW_CONFIGURATIONS: "7@x86_64@seh@posix"
           CONAN_BASH_PATH: "c:\\msys64\\usr\\bin\\bash"
           CONAN_CURRENT_PAGE: 1
 
-        - MINGW_CONFIGURATIONS: "7.1@x86_64@seh@posix"
+        - MINGW_CONFIGURATIONS: "7@x86_64@seh@posix"
           CONAN_BASH_PATH: "c:\\msys64\\usr\\bin\\bash"
           CONAN_CURRENT_PAGE: 2
 
-        - MINGW_CONFIGURATIONS: "7.1@x86_64@seh@posix"
+        - MINGW_CONFIGURATIONS: "7@x86_64@seh@posix"
           CONAN_BASH_PATH: "c:\\msys64\\usr\\bin\\bash"
           CONAN_CURRENT_PAGE: 3
 
-        - MINGW_CONFIGURATIONS: "7.1@x86_64@seh@posix"
+        - MINGW_CONFIGURATIONS: "7@x86_64@seh@posix"
           CONAN_BASH_PATH: "c:\\msys64\\usr\\bin\\bash"
           CONAN_CURRENT_PAGE: 4
 
