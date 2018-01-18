@@ -20,6 +20,6 @@ elif platform.system() == "Darwin":
     env["CONAN_APPLE_CLANG_VERSIONS"] = version
 
 with tools.environment_append(env):
-    print(env)
-    os.system("python %s/build.py" % os.path.dirname(os.path.realpath(__file__)))
+    with tools.chdir(os.path.dirname(os.path.realpath(__file__))):
+        os.system("python build.py")
 
