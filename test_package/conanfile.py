@@ -2,6 +2,7 @@ from conans.model.conan_file import ConanFile
 from conans import CMake
 import os
 import sys
+import platform
 
 
 class DefaultNameConan(ConanFile):
@@ -30,10 +31,14 @@ class DefaultNameConan(ConanFile):
     def test(self):        
         data_file = os.path.join(self.source_folder, "data.txt")
         self.run("cd bin && .%slambda < %s" % (os.sep, data_file))
-        if not self.options["Boost"].header_only:
+        if os.path.exists("bin/regex_exe%s" % ".exe" if platform.system == "Windows" else ""):
+            self.output.warn("Running regex_exe...")
             self.run("cd bin && .%sregex_exe < %s" % (os.sep, data_file))
             if self.options["Boost"].python:
                 os.chdir("bin")
                 sys.path.append(".")
                 import hello_ext
                 hello_ext.greet()
+        if os.path.exists("bin/newregex%s" % ".exe" if platform.system == "Windows" else ""):
+            self.output.warn("Running newregex...")
+            self.run("cd bin && .%sregex_exe < %s" % (os.sep, data_file))

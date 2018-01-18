@@ -1,13 +1,18 @@
+import shutil
+
 from conans import ConanFile
 from conans import tools
 import os
 import sys
 
-# From from *1 (see below, b2 --show-libraries)
-lib_list = ["atomic", "chrono", "container","context", "coroutine", "date_time", "exception", "fiber", "filesystem",
-            "graph", "graph_parallel", "iostreams", "locale", "log", "math", "mpi", "program_options", "python",
-            "random", "regex", "serialization", "signals", "stacktrace", "system", "test", "thread", "timer",
-            "type_erasure", "wave"]
+# From from *1 (see below, b2 --show-libraries), also ordered following linkage order
+# see https://github.com/Kitware/CMake/blob/master/Modules/FindBoost.cmake to know the order
+
+lib_list = ['math', 'wave', 'container', 'exception', 'graph', 'iostreams', 'locale', 'log',
+            'program_options', 'random', 'regex', 'mpi', 'serialization', 'signals',
+            'coroutine', 'fiber', 'context', 'timer', 'thread', 'chrono', 'date_time',
+            'atomic', 'filesystem', 'system', 'graph_parallel', 'python',
+            'stacktrace', 'test', 'type_erasure']
 
 
 class BoostConan(ConanFile):
@@ -32,7 +37,7 @@ class BoostConan(ConanFile):
     url = "https://github.com/lasote/conan-boost"
     license = "Boost Software License - Version 1.0. http://www.boost.org/LICENSE_1_0.txt"
     short_paths = True
-    no_copy_source = True
+    no_copy_source = False
 
     def config_options(self):
         if self.settings.compiler == "Visual Studio":
@@ -51,10 +56,15 @@ class BoostConan(ConanFile):
             self.info.header_only()
 
     def source(self):
-        zip_name = "%s.zip" % self.folder_name if sys.platform == "win32" else "%s.tar.gz" % self.folder_name
-        url = "http://sourceforge.net/projects/boost/files/boost/%s/%s/download" % (self.version, zip_name)
-        self.output.info("Downloading %s..." % url)
-        tools.download(url, zip_name)
+
+        if os.path.exists("/tmp/boost_1_66_0.tar.gz"):
+            shutil.copy("/tmp/boost_1_66_0.tar.gz", "boost_1_66_0.tar.gz")
+        else:
+            zip_name = "%s.zip" % self.folder_name if sys.platform == "win32" else "%s.tar.gz" % self.folder_name
+            url = "http://sourceforge.net/projects/boost/files/boost/%s/%s/download" % (self.version, zip_name)
+            self.output.info("Downloading %s..." % url)
+            tools.download(url, zip_name)
+
         tools.unzip(zip_name)
         os.unlink(zip_name)
 
@@ -229,16 +239,20 @@ class BoostConan(ConanFile):
     ####################################################################
 
     def package(self):
-        out_lib_dir = os.path.join("boost", "bin.v2")
+        # This stage/lib is in source_folder... Face palm, looks like it builds in build but then
+        # copy to source with the good lib name
+        out_lib_dir = os.path.join(self.folder_name, "stage", "lib")
         self.copy(pattern="*", dst="include/boost", src="%s/boost" % self.folder_name)
-        self.copy(pattern="*.a", dst="lib", src=out_lib_dir, keep_path=False)
+        if not self.options.shared:
+            self.copy(pattern="*.a", dst="lib", src=out_lib_dir, keep_path=False)
         self.copy(pattern="*.so", dst="lib", src=out_lib_dir, keep_path=False)
-        self.copy(pattern="*.so.*", dst="lib", src=out_lib_dir, keep_path=False)
+        # self.copy(pattern="*.so.*", dst="lib", src=out_lib_dir, keep_path=False)
         self.copy(pattern="*.dylib*", dst="lib", src=out_lib_dir, keep_path=False)
         self.copy(pattern="*.lib", dst="lib", src=out_lib_dir, keep_path=False)
         self.copy(pattern="*.dll", dst="bin", src=out_lib_dir, keep_path=False)
 
-        if not os.path.exists(os.path.join(self.package_folder, "lib")):  # First call for source_folder in local methods
+        # When first call with source do not package anything
+        if not os.path.exists(os.path.join(self.package_folder, "lib")):
             return
 
         self.renames_to_make_cmake_find_package_happy()
@@ -262,10 +276,6 @@ class BoostConan(ConanFile):
                 elif "-sgd-" in libname:
                     new_name = new_name.replace("-sgd-", "-gd-")
 
-            if new_name.endswith(str(self.version)):
-                if os.path.isfile(libpath):
-                    new_name = libname[0:(-1*(len(str(self.version))))-1]
-
             renames.append([libpath, os.path.join(self.package_folder, "lib", new_name)])
 
         for original, new in renames:
@@ -274,12 +284,28 @@ class BoostConan(ConanFile):
                 os.rename(original, new)
 
     def package_info(self):
-        self.cpp_info.libs = tools.collect_libs(self)
+        gen_libs = tools.collect_libs(self)
 
-        if self.options.without_test: # remove boost_unit_test_framework
+        self.cpp_info.libs = [None for _ in range(len(gen_libs))]
+
+        # The order is important, reorder following the lib_list order
+        missing_order_info = []
+        for real_lib_name in gen_libs:
+            for pos, alib in enumerate(lib_list):
+                if os.path.splitext(real_lib_name)[0].endswith(alib):
+                    self.cpp_info.libs[pos] = real_lib_name
+                    break
+            else:
+                self.output.info("Missing in order: %s" % real_lib_name)
+                missing_order_info.append(real_lib_name)  # Assume they do not depend on other
+
+        self.cpp_info.libs = [x for x in self.cpp_info.libs if x is not None] + missing_order_info
+
+        if self.options.without_test:  # remove boost_unit_test_framework
             self.cpp_info.libs = [lib for lib in self.cpp_info.libs if "unit_test" not in lib]
 
         self.output.info("LIBRARIES: %s" % self.cpp_info.libs)
+        self.output.info("Package folder: %s" % self.package_folder)
 
         if not self.options.header_only and self.options.shared:
             self.cpp_info.defines.append("BOOST_ALL_DYN_LINK")
