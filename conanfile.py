@@ -195,30 +195,30 @@ class BoostConan(ConanFile):
                 self.deps_cpp_info["bzip2"].include_paths[0].replace('\\', '/'),
                 self.deps_cpp_info["bzip2"].lib_paths[0].replace('\\', '/'))
 
+        if self.settings.compiler in ("gcc", "clang"):
+            contents += "\nusing %s : %s : %s ; " % (self.settings.compiler,
+                                                     self.settings.compiler.version,
+                                                     tools.which("gcc").replace("\\", "/"))
+            self.output.warn(contents)
         filename = "%s/user-config.jam" % folder
         tools.save(filename,  contents)
 
     ##################### BOOSTRAP METHODS ###########################
     def _get_boostrap_toolset(self):
-        if self.settings.os == "Windows":
-            if self.settings.compiler == "gcc":
-                return "mingw"
-            elif self.settings.compiler == "Visual Studio":
-                comp_ver = self.settings.compiler.version
-                return "vc%s" % ("141" if comp_ver == "15" else comp_ver)
-        else:
-            with_toolset = {"apple-clang": "darwin"}.get(str(self.settings.compiler),
-                                                         str(self.settings.compiler))
-            return with_toolset
+        if self.settings.os == "Windows" and self.settings.compiler == "Visual Studio":
+            comp_ver = self.settings.compiler.version
+            return "vc%s" % ("141" if comp_ver == "15" else comp_ver)
 
-        return ""
+        with_toolset = {"apple-clang": "darwin"}.get(str(self.settings.compiler),
+                                                     str(self.settings.compiler))
+        return with_toolset
 
     def bootstrap(self):
         folder = os.path.join(self.source_folder, self.folder_name, "tools", "build")
         try:
             bootstrap = "bootstrap.bat" if tools.os_info.is_windows else "./bootstrap.sh"
             with tools.vcvars(self.settings) if self.settings.compiler == "Visual Studio" else tools.no_op():
-                self.output.info("Using Visual Studio %s" % str(self.settings.compiler.version))
+                self.output.info("Using %s %s" % (self.settings.compiler, self.settings.compiler.version))
                 with tools.chdir(folder):
                     self.run("%s %s" % (bootstrap, self._get_boostrap_toolset()))
         except Exception:
