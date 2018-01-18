@@ -249,20 +249,22 @@ class BoostConan(ConanFile):
         for libname in os.listdir(os.path.join(self.package_folder, "lib")):
             libpath = os.path.join(self.package_folder, "lib", libname)
             new_name = libname
-            if new_name.startswith("lib"):
-                if os.path.isfile(libpath):
-                    new_name = libname[3:]
+            if self.settings.os == "Windows":
+                if new_name.startswith("lib"):
+                    if os.path.isfile(libpath):
+                        new_name = libname[3:]
+                if "-x64-" in libname:
+                    new_name = new_name.replace("-x64-", "-")
+                if "-x32-" in libname:
+                    new_name = new_name.replace("-x32-", "-")
+                if "-s-" in libname:
+                    new_name = new_name.replace("-s-", "-")
+                elif "-sgd-" in libname:
+                    new_name = new_name.replace("-sgd-", "-gd-")
+
             if new_name.endswith(str(self.version)):
                 if os.path.isfile(libpath):
                     new_name = libname[0:(-1*(len(str(self.version))))-1]
-            if "-x64-" in libname:
-                new_name = new_name.replace("-x64-", "-")
-            if "-x32-" in libname:
-                new_name = new_name.replace("-x32-", "-")
-            if "-s-" in libname:
-                new_name = new_name.replace("-s-", "-")
-            elif "-sgd-" in libname:
-                new_name = new_name.replace("-sgd-", "-gd-")
 
             renames.append([libpath, os.path.join(self.package_folder, "lib", new_name)])
 
