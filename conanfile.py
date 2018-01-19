@@ -56,14 +56,10 @@ class BoostConan(ConanFile):
             self.info.header_only()
 
     def source(self):
-
-        if os.path.exists("/tmp/boost_1_66_0.tar.gz"):
-            shutil.copy("/tmp/boost_1_66_0.tar.gz", "boost_1_66_0.tar.gz")
-        else:
-            zip_name = "%s.zip" % self.folder_name if sys.platform == "win32" else "%s.tar.gz" % self.folder_name
-            url = "http://sourceforge.net/projects/boost/files/boost/%s/%s/download" % (self.version, zip_name)
-            self.output.info("Downloading %s..." % url)
-            tools.download(url, zip_name)
+        zip_name = "%s.zip" % self.folder_name if sys.platform == "win32" else "%s.tar.gz" % self.folder_name
+        url = "http://sourceforge.net/projects/boost/files/boost/%s/%s/download" % (self.version, zip_name)
+        self.output.info("Downloading %s..." % url)
+        tools.download(url, zip_name)
 
         tools.unzip(zip_name)
         os.unlink(zip_name)
@@ -191,6 +187,9 @@ class BoostConan(ConanFile):
 
         cxx_flags = 'cxxflags="%s"' % " ".join(cxx_flags) if cxx_flags else ""
         flags.append(cxx_flags)
+
+        if self.settings.os == "Windows" and self.settings.compiler == "gcc":
+            flags.append("threading=multi")
 
         return flags
 
