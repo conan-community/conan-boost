@@ -1,13 +1,15 @@
 #include <boost/lambda/lambda.hpp>
 #include <iostream>
-#include <iterator>
-#include <algorithm>
 
-int main()
+int main(int argc, const char * const argv[])
 {
     using namespace boost::lambda;
-    typedef std::istream_iterator<int> in;
 
-    std::for_each(
-        in(std::cin), in(), std::cout << (_1 * 3) << " " );
+    std::vector<int> values;
+    for (int i = 1; i < argc; ++i)
+        values.push_back(atoi(argv[i]));
+
+    std::for_each(values.begin(), values.end(), std::cout << _1 * 3 << " " );
+
+    return 0;
 }

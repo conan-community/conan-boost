@@ -254,7 +254,8 @@ class BoostConan(ConanFile):
         if not os.path.exists(os.path.join(self.package_folder, "lib")):
             return
 
-        self.renames_to_make_cmake_find_package_happy()
+        if self.settings.compiler == "Visual Studio":
+            self.renames_to_make_cmake_find_package_happy()
 
     def renames_to_make_cmake_find_package_happy(self):
         # CMake findPackage help
@@ -262,18 +263,17 @@ class BoostConan(ConanFile):
         for libname in os.listdir(os.path.join(self.package_folder, "lib")):
             libpath = os.path.join(self.package_folder, "lib", libname)
             new_name = libname
-            if self.settings.os == "Windows":
-                if new_name.startswith("lib"):
-                    if os.path.isfile(libpath):
-                        new_name = libname[3:]
-                if "-x64-" in libname:
-                    new_name = new_name.replace("-x64-", "-")
-                if "-x32-" in libname:
-                    new_name = new_name.replace("-x32-", "-")
-                if "-s-" in libname:
-                    new_name = new_name.replace("-s-", "-")
-                elif "-sgd-" in libname:
-                    new_name = new_name.replace("-sgd-", "-gd-")
+            if new_name.startswith("lib"):
+                if os.path.isfile(libpath):
+                    new_name = libname[3:]
+            if "-x64-" in libname:
+                new_name = new_name.replace("-x64-", "-")
+            if "-x32-" in libname:
+                new_name = new_name.replace("-x32-", "-")
+            if "-s-" in libname:
+                new_name = new_name.replace("-s-", "-")
+            elif "-sgd-" in libname:
+                new_name = new_name.replace("-sgd-", "-gd-")
 
             renames.append([libpath, os.path.join(self.package_folder, "lib", new_name)])
 

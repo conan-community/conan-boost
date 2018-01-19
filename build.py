@@ -7,6 +7,15 @@ if __name__ == "__main__":
     builder = ConanMultiPackager()
     builder.add_common_builds(shared_option_name="Boost:shared", pure_c=False)
 
+    if platform.system() == "Windows":
+        filtered_builds = []
+        for settings, options, env_vars, build_requires in builder.builds:
+            # MinGW shared with linker errors. I don't have a clue
+            if settings["compiler"] == "gcc" and options["Boost:shared"] == True:
+                continue
+            filtered_builds.append([settings, options, env_vars, build_requires])
+        builder.builds = filtered_builds
+
     if platform.system() == "Linux":
         filtered_builds = []
         for settings, options, env_vars, build_requires in builder.builds:
@@ -15,5 +24,6 @@ if __name__ == "__main__":
             new_options["Boost:fPIC"] = True
             filtered_builds.append([settings, new_options, env_vars, build_requires])
         builder.builds = filtered_builds
+
     builder.run()
 

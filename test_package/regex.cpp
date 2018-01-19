@@ -1,15 +1,14 @@
 #include <boost/regex.hpp>
 #include <iostream>
-#include <string>
 
-int main()
+int main(int argc, const char * const argv[])
 {
     std::string line;
     boost::regex pat( "^Subject: (Re: |Aw: )*(.*)" );
 
-    while (std::cin)
-    {
-        std::getline(std::cin, line);
+    std::vector<int> values;
+    for (int i = 1; i < argc; ++i) {
+        const std::string word(argv[i]);
         boost::smatch matches;
         if (boost::regex_match(line, matches, pat))
             std::cout << matches[2] << std::endl;

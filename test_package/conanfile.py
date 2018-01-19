@@ -28,17 +28,10 @@ class DefaultNameConan(ConanFile):
         self.copy(pattern="*.dll", dst="bin", src="bin")
         self.copy(pattern="*.dylib", dst="bin", src="lib")
         
-    def test(self):        
-        data_file = os.path.join(self.source_folder, "data.txt")
-        self.run("cd bin && .%slambda < %s" % (os.sep, data_file))
-        if os.path.exists("bin/regex_exe%s" % ".exe" if platform.system == "Windows" else ""):
-            self.output.warn("Running regex_exe...")
-            self.run("cd bin && .%sregex_exe < %s" % (os.sep, data_file))
-            if self.options["Boost"].python:
-                os.chdir("bin")
-                sys.path.append(".")
-                import hello_ext
-                hello_ext.greet()
-        if os.path.exists("bin/newregex%s" % ".exe" if platform.system == "Windows" else ""):
-            self.output.warn("Running newregex...")
-            self.run("cd bin && .%sregex_exe < %s" % (os.sep, data_file))
+    def test(self):
+        self.run('ctest --output-on-error')
+        if self.options["Boost"].python:
+            os.chdir("bin")
+            sys.path.append(".")
+            import hello_ext
+            hello_ext.greet()
