@@ -29,7 +29,8 @@ class DefaultNameConan(ConanFile):
         self.copy(pattern="*.dylib", dst="bin", src="lib")
         
     def test(self):
-        self.run('ctest --output-on-error')
+        bt = self.settings.build_type
+        self.run('ctest --output-on-error -C %s' % bt)
         if self.options["Boost"].python:
             os.chdir("bin")
             sys.path.append(".")
