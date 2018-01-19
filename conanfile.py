@@ -94,16 +94,6 @@ class BoostConan(ConanFile):
         architecture = self.settings.get_safe('arch')
         flags = []
         self.output.info("Cross building, detecting compiler...")
-        # We only need special instructions for non-x86 CPUs.
-        # # Boost seems to handle x86 just fine without modding any jam files
-        cross_compiler = tools.which(os.environ['CXX'])
-        jam_filepath = os.path.join(self.source_folder, self.folder_name, 'project-config.jam')
-        with open(jam_filepath, 'a') as jam_file:
-            jam_file.write('\nusing {0} : {1} : {2} ;'.format(
-                self.settings.get_safe('compiler'),
-                architecture,
-                cross_compiler
-            ))
         flags.append('toolset={0}-{1}'.format(self.settings.get_safe('compiler'), architecture))
         flags.append('architecture=' + 'arm' if architecture.startswith('arm') else architecture)
         # Let's just assume it's 32-bit... 64-bit is pretty rare outside of x86_64
@@ -121,6 +111,7 @@ class BoostConan(ConanFile):
             raise Exception("I'm so sorry! I don't know the appropriate ABI for "
                             "your architecture. :'(")
         self.output.info("Cross building flags: %s" % flags)
+        flags.append("target-os=%s" % str(self.settings.os).lower())
         return flags
 
     def get_build_flags(self):
@@ -204,11 +195,33 @@ class BoostConan(ConanFile):
                 self.deps_cpp_info["bzip2"].include_paths[0].replace('\\', '/'),
                 self.deps_cpp_info["bzip2"].lib_paths[0].replace('\\', '/'))
 
-        if self.settings.compiler in ("gcc", "clang"):
-            contents += "\nusing %s : %s : %s ; " % (self.settings.compiler,
-                                                     self.settings.compiler.version,
-                                                     tools.which("gcc").replace("\\", "/"))
-            self.output.warn(contents)
+        if not tools.cross_building(self.settings) and self.settings.compiler in ("gcc", "clang"):
+            compiler = os.environ.get('CC', None) or "gcc"
+            contents += '\nusing %s : %s : "%s" ; ' % (self.settings.compiler,
+                                                       self.settings.compiler.version,
+                                                       tools.which(compiler).replace("\\", "/"))
+
+        if tools.cross_building(self.settings) and self.settings.arch not in ["x86_64", "x86"]:
+            # We only need special instructions for non-x86 CPUs.
+            # # Boost seems to handle x86 just fine without modding any jam files
+            cross_compiler = tools.which(os.environ['CXX']).replace("\\", "/")
+            contents += '\nusing {0} : {1} : "{2}"'.format(
+                    self.settings.get_safe('compiler'),
+                    self.settings.arch,
+                    cross_compiler)
+            contents += " :\n"
+            if "AR" in os.environ:
+                contents += '<archiver>"%s" ' % tools.which(os.environ["AR"]).replace("\\", "/")
+            if "RANLIB" in os.environ:
+                contents += '<ranlib>"%s" ' % tools.which(os.environ["RANLIB"]).replace("\\", "/")
+            if "CXXFLAGS" in os.environ:
+                contents += '<cxxflags>"%s" ' % os.environ["CXXFLAGS"]
+            if "CFLAGS" in os.environ:
+                contents += '<cflags>"%s" ' % os.environ["CFLAGS"]
+
+
+            contents += " ;"
+        self.output.warn(contents)
         filename = "%s/user-config.jam" % folder
         tools.save(filename,  contents)
 
@@ -254,28 +267,28 @@ class BoostConan(ConanFile):
         if not os.path.exists(os.path.join(self.package_folder, "lib")):
             return
 
-        if self.settings.compiler == "Visual Studio":
-            self.renames_to_make_cmake_find_package_happy()
+        self.renames_to_make_cmake_find_package_happy()
 
     def renames_to_make_cmake_find_package_happy(self):
         # CMake findPackage help
         renames = []
         for libname in os.listdir(os.path.join(self.package_folder, "lib")):
-            libpath = os.path.join(self.package_folder, "lib", libname)
-            new_name = libname
-            if new_name.startswith("lib"):
-                if os.path.isfile(libpath):
-                    new_name = libname[3:]
-            if "-x64-" in libname:
-                new_name = new_name.replace("-x64-", "-")
-            if "-x32-" in libname:
-                new_name = new_name.replace("-x32-", "-")
-            if "-s-" in libname:
-                new_name = new_name.replace("-s-", "-")
-            elif "-sgd-" in libname:
-                new_name = new_name.replace("-sgd-", "-gd-")
+            if self.settings.compiler == "Visual Studio":
+                libpath = os.path.join(self.package_folder, "lib", libname)
+                new_name = libname
+                if new_name.startswith("lib"):
+                    if os.path.isfile(libpath):
+                        new_name = libname[3:]
+                if "-s-" in libname:
+                    new_name = new_name.replace("-s-", "-")
+                elif "-sgd-" in libname:
+                    new_name = new_name.replace("-sgd-", "-gd-")
 
-            renames.append([libpath, os.path.join(self.package_folder, "lib", new_name)])
+        for arch in ["x", "a", "i", "s", "m", "p"]:  # Architectures
+            for addr in ["32", "64"]:  # Model address
+                new_name = new_name.replace("-%s%s-" % (arch, addr), "-")
+
+        renames.append([libpath, os.path.join(self.package_folder, "lib", new_name)])
 
         for original, new in renames:
             if original != new and not os.path.exists(new):
@@ -291,7 +304,7 @@ class BoostConan(ConanFile):
         missing_order_info = []
         for real_lib_name in gen_libs:
             for pos, alib in enumerate(lib_list):
-                if os.path.splitext(real_lib_name)[0].endswith(alib):
+                if os.path.splitext(real_lib_name)[0].split("-")[0].endswith(alib):
                     self.cpp_info.libs[pos] = real_lib_name
                     break
             else:
