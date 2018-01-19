@@ -274,9 +274,8 @@ class BoostConan(ConanFile):
         renames = []
         for libname in os.listdir(os.path.join(self.package_folder, "lib")):
             new_name = libname
+            libpath = os.path.join(self.package_folder, "lib", libname)
             if self.settings.compiler == "Visual Studio":
-                libpath = os.path.join(self.package_folder, "lib", libname)
-
                 if new_name.startswith("lib"):
                     if os.path.isfile(libpath):
                         new_name = libname[3:]
