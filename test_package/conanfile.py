@@ -1,4 +1,5 @@
-from conans.model.conan_file import ConanFile
+from conans.client.run_environment import RunEnvironment
+from conans.model.conan_file import ConanFile, tools
 from conans import CMake
 import os
 import sys
@@ -23,16 +24,14 @@ class DefaultNameConan(ConanFile):
             cmake.definitions["WITH_PYTHON"] = "TRUE"
         cmake.configure()
         cmake.build()
-
-    def imports(self):
-        self.copy(pattern="*.dll", dst="bin", src="bin")
-        self.copy(pattern="*.dylib", dst="bin", src="lib")
         
     def test(self):
         bt = self.settings.build_type
-        self.run('ctest --output-on-error -C %s' % bt)
-        if self.options["Boost"].python:
-            os.chdir("bin")
-            sys.path.append(".")
-            import hello_ext
-            hello_ext.greet()
+        re = RunEnvironment(self)
+        with tools.environment_append(re.vars):
+            self.run('ctest --output-on-error -C %s' % bt)
+            if self.options["Boost"].python:
+                os.chdir("bin")
+                sys.path.append(".")
+                import hello_ext
+                hello_ext.greet()

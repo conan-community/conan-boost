@@ -257,8 +257,8 @@ class BoostConan(ConanFile):
         self.copy(pattern="*", dst="include/boost", src="%s/boost" % self.folder_name)
         if not self.options.shared:
             self.copy(pattern="*.a", dst="lib", src=out_lib_dir, keep_path=False)
-        self.copy(pattern="*.so", dst="lib", src=out_lib_dir, keep_path=False)
-        # self.copy(pattern="*.so.*", dst="lib", src=out_lib_dir, keep_path=False)
+        self.copy(pattern="*.so", dst="lib", src=out_lib_dir, keep_path=False, symlinks=True)
+        self.copy(pattern="*.so.*", dst="lib", src=out_lib_dir, keep_path=False, symlinks=True)
         self.copy(pattern="*.dylib*", dst="lib", src=out_lib_dir, keep_path=False)
         self.copy(pattern="*.lib", dst="lib", src=out_lib_dir, keep_path=False)
         self.copy(pattern="*.dll", dst="bin", src=out_lib_dir, keep_path=False)
