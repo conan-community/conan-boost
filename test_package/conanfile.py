@@ -3,7 +3,6 @@ from conans.model.conan_file import ConanFile, tools
 from conans import CMake
 import os
 import sys
-import platform
 
 
 class DefaultNameConan(ConanFile):
@@ -24,12 +23,13 @@ class DefaultNameConan(ConanFile):
             cmake.definitions["WITH_PYTHON"] = "TRUE"
         cmake.configure()
         cmake.build()
-        
+
     def test(self):
         bt = self.settings.build_type
         re = RunEnvironment(self)
         with tools.environment_append(re.vars):
-            self.run('ctest --output-on-error -C %s' % bt)
+            lpath = os.environ["DYLD_LIBRARY_PATH"]
+            self.run('DYLD_LIBRARY_PATH=%s ctest --output-on-error -C %s' % (lpath, bt))
             if self.options["Boost"].python:
                 os.chdir("bin")
                 sys.path.append(".")
