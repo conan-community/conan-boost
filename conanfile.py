@@ -273,9 +273,10 @@ class BoostConan(ConanFile):
         # CMake findPackage help
         renames = []
         for libname in os.listdir(os.path.join(self.package_folder, "lib")):
+            new_name = libname
             if self.settings.compiler == "Visual Studio":
                 libpath = os.path.join(self.package_folder, "lib", libname)
-                new_name = libname
+
                 if new_name.startswith("lib"):
                     if os.path.isfile(libpath):
                         new_name = libname[3:]
@@ -284,9 +285,9 @@ class BoostConan(ConanFile):
                 elif "-sgd-" in libname:
                     new_name = new_name.replace("-sgd-", "-gd-")
 
-        for arch in ["x", "a", "i", "s", "m", "p"]:  # Architectures
-            for addr in ["32", "64"]:  # Model address
-                new_name = new_name.replace("-%s%s-" % (arch, addr), "-")
+            for arch in ["x", "a", "i", "s", "m", "p"]:  # Architectures
+                for addr in ["32", "64"]:  # Model address
+                    new_name = new_name.replace("-%s%s-" % (arch, addr), "-")
 
         renames.append([libpath, os.path.join(self.package_folder, "lib", new_name)])
 
