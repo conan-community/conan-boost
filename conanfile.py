@@ -289,7 +289,7 @@ class BoostConan(ConanFile):
                 for addr in ["32", "64"]:  # Model address
                     new_name = new_name.replace("-%s%s-" % (arch, addr), "-")
 
-        renames.append([libpath, os.path.join(self.package_folder, "lib", new_name)])
+            renames.append([libpath, os.path.join(self.package_folder, "lib", new_name)])
 
         for original, new in renames:
             if original != new and not os.path.exists(new):
