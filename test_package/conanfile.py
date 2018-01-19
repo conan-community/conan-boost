@@ -1,3 +1,5 @@
+import platform
+
 from conans.client.run_environment import RunEnvironment
 from conans.model.conan_file import ConanFile, tools
 from conans import CMake
@@ -28,8 +30,11 @@ class DefaultNameConan(ConanFile):
         bt = self.settings.build_type
         re = RunEnvironment(self)
         with tools.environment_append(re.vars):
-            lpath = os.environ["DYLD_LIBRARY_PATH"]
-            self.run('DYLD_LIBRARY_PATH=%s ctest --output-on-error -C %s' % (lpath, bt))
+            if platform.system() == "Darwin":
+                lpath = os.environ["DYLD_LIBRARY_PATH"]
+                self.run('DYLD_LIBRARY_PATH=%s ctest --output-on-error -C %s' % (lpath, bt))
+            else:
+                self.run('ctest --output-on-error -C %s' % bt)
             if self.options["Boost"].python:
                 os.chdir("bin")
                 sys.path.append(".")
