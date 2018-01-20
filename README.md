@@ -1,3 +1,6 @@
+[![Build status](https://ci.appveyor.com/api/projects/status/hlb8joewtth07nmb/branch/release/1.66.0?svg=true)](https://ci.appveyor.com/project/lasote/conan-boost/branch/1.66.0)
+
+[![Build Status](https://travis-ci.org/lasote/conan-boost.svg?branch=release%2F1.66.0)](https://travis-ci.org/lasote/conan-boost)
 
 # conan-boost
 
