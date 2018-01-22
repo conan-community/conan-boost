@@ -100,7 +100,7 @@ class BoostConan(ConanFile):
         flags.append('architecture=' + 'arm' if architecture.startswith('arm') else architecture)
         # Let's just assume it's 32-bit... 64-bit is pretty rare outside of x86_64
         flags.append('address-model=32')
-        if self.settings.get_safe('os').lower() == 'linux':
+        if self.settings.get_safe('os').lower() in ('linux', 'android'):
             flags.append('binary-format=elf')
         else:
             raise Exception("I'm so sorry! I don't know the appropriate binary "
