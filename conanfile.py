@@ -302,7 +302,7 @@ class BoostConan(ConanFile):
     def package_info(self):
         gen_libs = tools.collect_libs(self)
 
-        self.cpp_info.libs = [None for _ in range(len(gen_libs))]
+        self.cpp_info.libs = [None for _ in range(len(lib_list))]
 
         # The order is important, reorder following the lib_list order
         missing_order_info = []

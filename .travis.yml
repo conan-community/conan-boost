@@ -93,34 +93,29 @@ matrix:
         env: CONAN_GCC_VERSIONS=7 CONAN_DOCKER_IMAGE=lasote/conangcc7 CONAN_CURRENT_PAGE=10
       - <<: *osx
         osx_image: xcode9
-        env: CONAN_APPLE_CLANG_VERSIONS=9.0 CONAN_CURRENT_PAGE=1
+        env: CONAN_APPLE_CLANG_VERSIONS=9.0 CONAN_CURRENT_PAGE=1 CONAN_TOTAL_PAGES=8
       - <<: *osx
         osx_image: xcode9
-        env: CONAN_APPLE_CLANG_VERSIONS=9.0 CONAN_CURRENT_PAGE=2
+        env: CONAN_APPLE_CLANG_VERSIONS=9.0 CONAN_CURRENT_PAGE=2 CONAN_TOTAL_PAGES=8
       - <<: *osx
         osx_image: xcode9
-        env: CONAN_APPLE_CLANG_VERSIONS=9.0 CONAN_CURRENT_PAGE=3
+        env: CONAN_APPLE_CLANG_VERSIONS=9.0 CONAN_CURRENT_PAGE=3 CONAN_TOTAL_PAGES=8
       - <<: *osx
         osx_image: xcode9
-        env: CONAN_APPLE_CLANG_VERSIONS=9.0 CONAN_CURRENT_PAGE=4
+        env: CONAN_APPLE_CLANG_VERSIONS=9.0 CONAN_CURRENT_PAGE=4 CONAN_TOTAL_PAGES=8
       - <<: *osx
         osx_image: xcode9
-        env: CONAN_APPLE_CLANG_VERSIONS=9.0 CONAN_CURRENT_PAGE=5
+        env: CONAN_APPLE_CLANG_VERSIONS=9.0 CONAN_CURRENT_PAGE=5 CONAN_TOTAL_PAGES=8
       - <<: *osx
         osx_image: xcode9
-        env: CONAN_APPLE_CLANG_VERSIONS=9.0 CONAN_CURRENT_PAGE=6
+        env: CONAN_APPLE_CLANG_VERSIONS=9.0 CONAN_CURRENT_PAGE=6 CONAN_TOTAL_PAGES=8
       - <<: *osx
         osx_image: xcode9
-        env: CONAN_APPLE_CLANG_VERSIONS=9.0 CONAN_CURRENT_PAGE=7
+        env: CONAN_APPLE_CLANG_VERSIONS=9.0 CONAN_CURRENT_PAGE=7 CONAN_TOTAL_PAGES=8
       - <<: *osx
         osx_image: xcode9
-        env: CONAN_APPLE_CLANG_VERSIONS=9.0 CONAN_CURRENT_PAGE=8
-      - <<: *osx
-        osx_image: xcode9
-        env: CONAN_APPLE_CLANG_VERSIONS=9.0 CONAN_CURRENT_PAGE=9
-      - <<: *osx
-        osx_image: xcode9
-        env: CONAN_APPLE_CLANG_VERSIONS=9.0 CONAN_CURRENT_PAGE=10
+        env: CONAN_APPLE_CLANG_VERSIONS=9.0 CONAN_CURRENT_PAGE=8 CONAN_TOTAL_PAGES=8
+
 
 install:
   - chmod +x .travis/install.sh
