@@ -6,7 +6,7 @@ compiler=Visual Studio
 compiler.runtime=MT
 compiler.version=14
 [options]
-Boost:shared=True
+boost:shared=True
 [scopes]
 [env]
  

@@ -14,17 +14,17 @@ The packages generated with this **conanfile** can be found on [bintray](https:/
 
 ### Basic setup
 
-    $ conan install Boost/1.66.0@conan/stable
+    $ conan install boost/1.66.0@conan/stable
 
 ### Project setup
 
 If you handle multiple dependencies in your project is better to add a *conanfile.txt*
 
     [requires]
-    Boost/1.66.0@conan/stable
+    boost/1.66.0@conan/stable
 
     [options]
-    Boost:shared=true # false
+    boost:shared=true # false
     # Take a look for all available options in conanfile.py
 
     [generators]

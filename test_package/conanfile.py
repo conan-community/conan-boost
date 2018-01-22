@@ -14,14 +14,14 @@ class DefaultNameConan(ConanFile):
     generators = "cmake"
 
     def configure(self):
-        if self.options["Boost"].header_only:
+        if self.options["boost"].header_only:
             self.settings.clear()
 
     def build(self):
         cmake = CMake(self)
-        if self.options["Boost"].header_only:
+        if self.options["boost"].header_only:
             cmake.definitions["HEADER_ONLY"] = "TRUE"
-        if self.options["Boost"].python:
+        if self.options["boost"].python:
             cmake.definitions["WITH_PYTHON"] = "TRUE"
         cmake.configure()
         cmake.build()
@@ -35,7 +35,7 @@ class DefaultNameConan(ConanFile):
                 self.run('DYLD_LIBRARY_PATH=%s ctest --output-on-error -C %s' % (lpath, bt))
             else:
                 self.run('ctest --output-on-error -C %s' % bt)
-            if self.options["Boost"].python:
+            if self.options["boost"].python:
                 os.chdir("bin")
                 sys.path.append(".")
                 import hello_ext

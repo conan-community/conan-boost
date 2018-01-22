@@ -1,5 +1,3 @@
-import shutil
-
 from conans import ConanFile
 from conans import tools
 import os
@@ -16,7 +14,7 @@ lib_list = ['math', 'wave', 'container', 'exception', 'graph', 'iostreams', 'loc
 
 
 class BoostConan(ConanFile):
-    name = "Boost"
+    name = "boost"
     version = "1.66.0"
     settings = "os", "arch", "compiler", "build_type"
     folder_name = "boost_%s" % version.replace(".", "_")
@@ -43,8 +41,12 @@ class BoostConan(ConanFile):
         if self.settings.compiler == "Visual Studio":
             self.options.remove("fPIC")
 
+    @property
+    def zip_bzip2_requires_needed(self):
+        return not self.options.without_iostreams and not self.options.header_only
+
     def configure(self):
-        if not self.options.without_iostreams and not self.options.header_only:
+        if self.zip_bzip2_requires_needed:
             self.requires("bzip2/1.0.6@conan/stable")
             self.options["bzip2"].shared = False
             
@@ -187,13 +189,16 @@ class BoostConan(ConanFile):
     def create_user_config_jam(self, folder):
         """To help locating the zlib and bzip2 deps"""
         self.output.warn("Patching user-config.jam")
-        contents = "\nusing zlib : 1.2.11 : <include>%s <search>%s ;" % (
-            self.deps_cpp_info["zlib"].include_paths[0].replace('\\', '/'),
-            self.deps_cpp_info["zlib"].lib_paths[0].replace('\\', '/'))
-        if self.settings.os == "Linux" or self.settings.os == "Macos":
-            contents += "\nusing bzip2 : 1.0.6 : <include>%s <search>%s ;" % (
-                self.deps_cpp_info["bzip2"].include_paths[0].replace('\\', '/'),
-                self.deps_cpp_info["bzip2"].lib_paths[0].replace('\\', '/'))
+        contents = ""
+
+        if self.zip_bzip2_requires_needed:
+            contents = "\nusing zlib : 1.2.11 : <include>%s <search>%s ;" % (
+                self.deps_cpp_info["zlib"].include_paths[0].replace('\\', '/'),
+                self.deps_cpp_info["zlib"].lib_paths[0].replace('\\', '/'))
+            if self.settings.os == "Linux" or self.settings.os == "Macos":
+                contents += "\nusing bzip2 : 1.0.6 : <include>%s <search>%s ;" % (
+                    self.deps_cpp_info["bzip2"].include_paths[0].replace('\\', '/'),
+                    self.deps_cpp_info["bzip2"].lib_paths[0].replace('\\', '/'))
 
         if not tools.cross_building(self.settings) and self.settings.compiler in ("gcc", "clang"):
             compiler = os.environ.get('CC', None) or "gcc"
@@ -218,9 +223,8 @@ class BoostConan(ConanFile):
                 contents += '<cxxflags>"%s" ' % os.environ["CXXFLAGS"]
             if "CFLAGS" in os.environ:
                 contents += '<cflags>"%s" ' % os.environ["CFLAGS"]
-
-
             contents += " ;"
+
         self.output.warn(contents)
         filename = "%s/user-config.jam" % folder
         tools.save(filename,  contents)
