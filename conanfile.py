@@ -183,8 +183,8 @@ class BoostConan(ConanFile):
         flags = []
         self.output.info("Cross building, detecting compiler...")
         flags.append('architecture=%s' % ('arm' if arch.startswith('arm') else arch))
-        # Let's just assume it's 32-bit... 64-bit is pretty rare outside of x86_64
-        flags.append('address-model=32')
+        bits = {"x86_64": "64", "armv8": "64"}.get(str(self.settings.arch), "32")
+        flags.append('address-model=%s' % bits)
         if self.settings.get_safe('os').lower() in ('linux', 'android'):
             flags.append('binary-format=elf')
         else:
