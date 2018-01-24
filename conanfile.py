@@ -111,9 +111,9 @@ class BoostConan(ConanFile):
 
         flags.append("link=%s" % ("static" if not self.options.shared else "shared"))
         flags.append("variant=%s" % str(self.settings.build_type).lower())
-        if architecture == 'x86':
-            flags.append('address-usemodel=32')
-        elif architecture == 'x86_64':
+        if architecture == 'x86' and not 'address-model=32' in flags:
+            flags.append('address-model=32')
+        elif architecture == 'x86_64' and not 'address-model=64' in flags:
             flags.append('address-model=64')
 
         for libname in lib_list:
