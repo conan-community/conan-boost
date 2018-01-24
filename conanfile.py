@@ -114,7 +114,7 @@ class BoostConan(ConanFile):
                 return "%s-%s" % (self.settings.compiler,
                                   str(self.settings.compiler.version))
             elif self.settings.compiler == "apple-clang":
-                return "clang"
+                return "clang-darwin"
             else:
                 return self.settings.compiler
 
@@ -207,11 +207,15 @@ class BoostConan(ConanFile):
         """To help locating the zlib and bzip2 deps"""
         self.output.warn("Patching user-config.jam")
         contents = ""
-        compiler_set = {"apple-clang": "clang"}.get(str(self.settings.compiler),
-                                                    str(self.settings.compiler))
+        compiler_set = {"apple-clang": "clang-darwin",
+                        "Visual Studio": "msvc"}.get(str(self.settings.compiler),
+                                                     str(self.settings.compiler))
         compiler_command = os.environ.get('CXX', None)
         if not compiler_command:
-            compiler_command = {"gcc": "g++", "clang": "clang++"}.get(compiler_set, compiler_set)
+            compiler_command = {"gcc": "g++",
+                                "clang": "clang++",
+                                "apple-clang": "clang++"}.get(str(self.settings.compiler),
+                                                              None)
         else:
             compiler_command = compiler_command.replace("\\", "/")
 
@@ -224,12 +228,12 @@ class BoostConan(ConanFile):
                     self.deps_cpp_info["bzip2"].include_paths[0].replace('\\', '/'),
                     self.deps_cpp_info["bzip2"].lib_paths[0].replace('\\', '/'))
 
-        if self.settings.compiler != "Visual Studio":
-            subs = self.get_toolset_name() if tools.cross_building(self.settings) \
-                else str(self.settings.compiler.version)
-            contents += '\nusing "%s" : "%s" : "%s" ' % (compiler_set,
-                                                         subs,
-                                                         compiler_command)
+        subs = self.get_toolset_name() if tools.cross_building(self.settings) \
+            else str(self.settings.compiler.version)
+
+        contents += '\nusing "%s" : "%s"' % (compiler_set, subs)
+        if compiler_command:
+            contents += ' : "%s"' % compiler_command
         contents += " :\n"
         if "AR" in os.environ:
             contents += '<archiver>"%s" ' % tools.which(os.environ["AR"]).replace("\\", "/")
