@@ -224,9 +224,9 @@ class BoostConan(ConanFile):
                     self.deps_cpp_info["bzip2"].include_paths[0].replace('\\', '/'),
                     self.deps_cpp_info["bzip2"].lib_paths[0].replace('\\', '/'))
 
-        contents += '\nusing %s : %s : "%s" ; ' % (compiler_set,
-                                                   self.get_toolset_name(),
-                                                   compiler_command)
+        contents += '\nusing %s : %s : "%s" ' % (compiler_set,
+                                                 self.get_toolset_name(),
+                                                 compiler_command)
         contents += " :\n"
         if "AR" in os.environ:
             contents += '<archiver>"%s" ' % tools.which(os.environ["AR"]).replace("\\", "/")
