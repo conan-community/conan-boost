@@ -67,6 +67,8 @@ class BoostConan(ConanFile):
         tools.unzip(zip_name)
         os.unlink(zip_name)
 
+    ##################### BUILDING METHODS ###########################
+
     def build(self):
         if self.options.header_only:
             self.output.warn("Header only package, skipping build")
@@ -176,6 +178,31 @@ class BoostConan(ConanFile):
 
         return flags
 
+    def get_build_cross_flags(self):
+        arch = self.settings.get_safe('arch')
+        flags = []
+        self.output.info("Cross building, detecting compiler...")
+        flags.append('architecture=%s' % ('arm' if arch.startswith('arm') else arch))
+        # Let's just assume it's 32-bit... 64-bit is pretty rare outside of x86_64
+        flags.append('address-model=32')
+        if self.settings.get_safe('os').lower() in ('linux', 'android'):
+            flags.append('binary-format=elf')
+        else:
+            raise Exception("I'm so sorry! I don't know the appropriate binary "
+                            "format for your architecture. :'(")
+        if arch.startswith('arm'):
+            if 'hf' in arch:
+                flags.append('-mfloat-abi=hard')
+            flags.append('abi=aapcs')
+        elif arch in ["x86", "x86_64"]:
+            pass
+        else:
+            raise Exception("I'm so sorry! I don't know the appropriate ABI for "
+                            "your architecture. :'(")
+        self.output.info("Cross building flags: %s" % flags)
+        flags.append("target-os=%s" % str(self.settings.os).lower())
+        return flags
+
     def create_user_config_jam(self, folder):
         """To help locating the zlib and bzip2 deps"""
         self.output.warn("Patching user-config.jam")
@@ -216,32 +243,6 @@ class BoostConan(ConanFile):
         self.output.warn(contents)
         filename = "%s/user-config.jam" % folder
         tools.save(filename,  contents)
-
-    def get_build_cross_flags(self):
-        arch = self.settings.get_safe('arch')
-        flags = []
-        self.output.info("Cross building, detecting compiler...")
-        flags.append('architecture=%s' % ('arm' if arch.startswith('arm') else arch))
-        # Let's just assume it's 32-bit... 64-bit is pretty rare outside of x86_64
-        flags.append('address-model=32')
-        if self.settings.get_safe('os').lower() in ('linux', 'android'):
-            flags.append('binary-format=elf')
-        else:
-            raise Exception("I'm so sorry! I don't know the appropriate binary "
-                            "format for your architecture. :'(")
-        if arch.startswith('arm'):
-            if 'hf' in arch:
-                flags.append('-mfloat-abi=hard')
-            flags.append('abi=aapcs')
-        elif arch in ["x86", "x86_64"]:
-            pass
-        else:
-            raise Exception("I'm so sorry! I don't know the appropriate ABI for "
-                            "your architecture. :'(")
-        self.output.info("Cross building flags: %s" % flags)
-        flags.append("target-os=%s" % str(self.settings.os).lower())
-        return flags
-
 
     ##################### BOOSTRAP METHODS ###########################
     def _get_boostrap_toolset(self):
