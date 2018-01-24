@@ -95,7 +95,7 @@ class BoostConan(ConanFile):
 
     def get_toolset_name(self):
         if tools.cross_building(self.settings):
-            return "%s_%s" % (self.settings.os.lower(), self.settings.arch)
+            return "%s_%s" % (str(self.settings.os).lower(), self.settings.arch)
         else:
             if self.settings.compiler == "Visual Studio":
                 cversion = self.settings.compiler.version
