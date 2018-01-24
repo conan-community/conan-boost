@@ -127,7 +127,7 @@ class BoostConan(ConanFile):
         flags.append("toolset=%s" % self.get_toolset_name())
 
         if tools.cross_building(self.settings):
-            flags = self.get_build_cross()
+            flags = self.get_build_cross_flags()
         else:
             if self.settings.compiler == "Visual Studio" and self.settings.compiler.runtime:
                 flags.append("runtime-link=%s" % ("static" if "MT" in str(self.settings.compiler.runtime) else "shared"))
@@ -181,7 +181,12 @@ class BoostConan(ConanFile):
         self.output.warn("Patching user-config.jam")
         contents = ""
         compiler_set = {"apple-clang": "clang"}.get(str(self.settings.compiler),
-                                                str(self.settings.compiler))
+                                                    str(self.settings.compiler))
+        compiler_command = os.environ.get('CXX', None)
+        if not compiler_command:
+            compiler_command = {"gcc": "g++", "clang": "clang++"}.get(compiler_set, compiler_set)
+        else:
+            compiler_command = compiler_command.replace("\\", "/")
 
         if self.zip_bzip2_requires_needed:
             contents = "\nusing zlib : 1.2.11 : <include>%s <search>%s ;" % (
@@ -192,40 +197,31 @@ class BoostConan(ConanFile):
                     self.deps_cpp_info["bzip2"].include_paths[0].replace('\\', '/'),
                     self.deps_cpp_info["bzip2"].lib_paths[0].replace('\\', '/'))
 
-        if not tools.cross_building(self.settings):
-            compiler = os.environ.get('CXX', None) or compiler_set
-            contents += '\nusing %s : %s : "%s" ; ' % (compiler_set,
-                                                       self.settings.compiler.version,
-                                                       compiler.replace("\\", "/"))
-        else:  # We create the tool following architecture
-            cross_compiler = tools.which(os.environ['CXX']).replace("\\", "/") or compiler_set
-            contents += '\nusing {0} : {1} : "{2}"'.format(
-                    compiler_set,
-                    self.get_toolset_name(),
-                    cross_compiler)
-
-            contents += " :\n"
-            if "AR" in os.environ:
-                contents += '<archiver>"%s" ' % tools.which(os.environ["AR"]).replace("\\", "/")
-            if "RANLIB" in os.environ:
-                contents += '<ranlib>"%s" ' % tools.which(os.environ["RANLIB"]).replace("\\", "/")
-            if "CXXFLAGS" in os.environ:
-                contents += '<cxxflags>"%s" ' % os.environ["CXXFLAGS"]
-            if "CFLAGS" in os.environ:
-                contents += '<cflags>"%s" ' % os.environ["CFLAGS"]
-            if "LDFLAGS" in os.environ:
-                contents += '<ldflags>"%s" ' % os.environ["LDFLAGS"]
-            contents += " ;"
+        contents += '\nusing %s : %s : "%s" ; ' % (compiler_set,
+                                                   self.get_toolset_name(),
+                                                   compiler_command)
+        contents += " :\n"
+        if "AR" in os.environ:
+            contents += '<archiver>"%s" ' % tools.which(os.environ["AR"]).replace("\\", "/")
+        if "RANLIB" in os.environ:
+            contents += '<ranlib>"%s" ' % tools.which(os.environ["RANLIB"]).replace("\\", "/")
+        if "CXXFLAGS" in os.environ:
+            contents += '<cxxflags>"%s" ' % os.environ["CXXFLAGS"]
+        if "CFLAGS" in os.environ:
+            contents += '<cflags>"%s" ' % os.environ["CFLAGS"]
+        if "LDFLAGS" in os.environ:
+            contents += '<ldflags>"%s" ' % os.environ["LDFLAGS"]
+        contents += " ;"
 
         self.output.warn(contents)
         filename = "%s/user-config.jam" % folder
         tools.save(filename,  contents)
 
-    def get_build_cross(self):
-        architecture = self.settings.get_safe('arch')
+    def get_build_cross_flags(self):
+        arch = self.settings.get_safe('arch')
         flags = []
         self.output.info("Cross building, detecting compiler...")
-        flags.append('architecture=%s' % ('arm' if architecture.startswith('arm') else architecture))
+        flags.append('architecture=%s' % ('arm' if arch.startswith('arm') else arch))
         # Let's just assume it's 32-bit... 64-bit is pretty rare outside of x86_64
         flags.append('address-model=32')
         if self.settings.get_safe('os').lower() in ('linux', 'android'):
@@ -233,11 +229,11 @@ class BoostConan(ConanFile):
         else:
             raise Exception("I'm so sorry! I don't know the appropriate binary "
                             "format for your architecture. :'(")
-        if architecture.startswith('arm'):
-            if 'hf' in architecture:
+        if arch.startswith('arm'):
+            if 'hf' in arch:
                 flags.append('-mfloat-abi=hard')
             flags.append('abi=aapcs')
-        elif architecture in ["x86", "x86_64"]:
+        elif arch in ["x86", "x86_64"]:
             pass
         else:
             raise Exception("I'm so sorry! I don't know the appropriate ABI for "
