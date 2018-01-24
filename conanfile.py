@@ -95,29 +95,6 @@ class BoostConan(ConanFile):
                     # self.run("%s --show-libraries" % b2_exe)
                     self.run(full_command)
 
-    def get_toolset_name(self):
-        if tools.cross_building(self.settings):
-            return "%s_%s" % (str(self.settings.os).lower(), self.settings.arch)
-        else:
-            if self.settings.compiler == "Visual Studio":
-                cversion = self.settings.compiler.version
-                _msvc_version = "14.1" if cversion == "15" else "%s.0" % cversion
-                return "msvc-%s" % _msvc_version
-            elif not self.settings.os == "Windows" and self.settings.compiler == "gcc" and \
-                    str(self.settings.compiler.version)[0] >= "5":
-                # For GCC >= v5 we only need the major otherwise Boost doesn't find the compiler
-                # The NOT windows check is necessary to exclude MinGW:
-                return "%s-%s" % (self.settings.compiler,
-                                  str(self.settings.compiler.version)[0])
-            elif str(self.settings.compiler) in ["clang", "gcc"]:
-                # For GCC < v5 and Clang we need to provide the entire version string
-                return "%s-%s" % (self.settings.compiler,
-                                  str(self.settings.compiler.version))
-            elif self.settings.compiler == "apple-clang":
-                return "clang-darwin"
-            else:
-                return self.settings.compiler
-
     def get_build_flags(self):
 
         architecture = self.settings.get_safe('arch')
@@ -125,8 +102,6 @@ class BoostConan(ConanFile):
 
         if self.settings.compiler == "gcc":
             flags.append("--layout=system")
-
-        flags.append("toolset=%s" % self.get_toolset_name())
 
         if tools.cross_building(self.settings):
             flags = self.get_build_cross_flags()
@@ -206,19 +181,10 @@ class BoostConan(ConanFile):
     def create_user_config_jam(self, folder):
         """To help locating the zlib and bzip2 deps"""
         self.output.warn("Patching user-config.jam")
-        contents = ""
-        compiler_set = {"apple-clang": "clang-darwin",
-                        "Visual Studio": "msvc"}.get(str(self.settings.compiler),
-                                                     str(self.settings.compiler))
-        compiler_command = os.environ.get('CXX', None)
-        if not compiler_command:
-            compiler_command = {"gcc": "g++",
-                                "clang": "clang++",
-                                "apple-clang": "clang++"}.get(str(self.settings.compiler),
-                                                              None)
-        else:
-            compiler_command = compiler_command.replace("\\", "/")
 
+        compiler_command = os.environ.get('CXX', None)
+
+        contents = ""
         if self.zip_bzip2_requires_needed:
             contents = "\nusing zlib : 1.2.11 : <include>%s <search>%s ;" % (
                 self.deps_cpp_info["zlib"].include_paths[0].replace('\\', '/'),
@@ -228,13 +194,14 @@ class BoostConan(ConanFile):
                     self.deps_cpp_info["bzip2"].include_paths[0].replace('\\', '/'),
                     self.deps_cpp_info["bzip2"].lib_paths[0].replace('\\', '/'))
 
-        subs = self.get_toolset_name() if tools.cross_building(self.settings) \
-            else str(self.settings.compiler.version)
+        toolset, version = self.get_toolset_and_version()
 
-        contents += '\nusing "%s" : "%s"' % (compiler_set, subs)
+        # Specify here the toolset with the binary if present if don't empty parameter : :
+        contents += '\nusing "%s" : "%s" : ' % (toolset, version)
         if compiler_command:
-            contents += ' : "%s"' % compiler_command
-        contents += " :\n"
+            contents += ' "%s"' % compiler_command.replace("\\", "/")
+
+        contents += " : \n"
         if "AR" in os.environ:
             contents += '<archiver>"%s" ' % tools.which(os.environ["AR"]).replace("\\", "/")
         if "RANLIB" in os.environ:
@@ -250,6 +217,27 @@ class BoostConan(ConanFile):
         self.output.warn(contents)
         filename = "%s/user-config.jam" % folder
         tools.save(filename,  contents)
+
+    def get_toolset_and_version(self):
+        compiler_version = str(self.settings.compiler.version)
+        compiler = str(self.settings.compiler)
+        if self.settings.compiler == "Visual Studio":
+            cversion = self.settings.compiler.version
+            _msvc_version = "14.1" if cversion == "15" else "%s.0" % cversion
+            return "msvc", _msvc_version
+        elif not self.settings.os == "Windows" and compiler == "gcc" and compiler_version[0] >= "5":
+            # For GCC >= v5 we only need the major otherwise Boost doesn't find the compiler
+            # The NOT windows check is necessary to exclude MinGW:
+            return compiler, compiler_version[0]
+        elif str(self.settings.compiler) in ["clang", "gcc"]:
+            # For GCC < v5 and Clang we need to provide the entire version string
+            return compiler, compiler_version
+        elif self.settings.compiler == "apple-clang":
+            return "clang", compiler_version
+        elif self.settings.compiler == "sun-cc":
+            return "sunpro", compiler_version
+        else:
+            return compiler, compiler_version
 
     ##################### BOOSTRAP METHODS ###########################
     def _get_boostrap_toolset(self):
