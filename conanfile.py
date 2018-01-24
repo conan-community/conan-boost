@@ -225,7 +225,7 @@ class BoostConan(ConanFile):
                     self.deps_cpp_info["bzip2"].lib_paths[0].replace('\\', '/'))
 
         subs = self.get_toolset_name() if tools.cross_building(self.settings) \
-            else str(self.compiler.version)
+            else str(self.settings.compiler.version)
 
         contents += '\nusing %s : %s : "%s" ' % (compiler_set,
                                                  subs,
