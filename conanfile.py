@@ -162,9 +162,7 @@ class BoostConan(ConanFile):
         flags.append('address-model=%s' % bits)
         if self.settings.get_safe('os').lower() in ('linux', 'android'):
             flags.append('binary-format=elf')
-        else:
-            raise Exception("I'm so sorry! I don't know the appropriate binary "
-                            "format for your architecture. :'(")
+
         if arch.startswith('arm'):
             if 'hf' in arch:
                 flags.append('-mfloat-abi=hard')
@@ -175,7 +173,22 @@ class BoostConan(ConanFile):
             raise Exception("I'm so sorry! I don't know the appropriate ABI for "
                             "your architecture. :'(")
         self.output.info("Cross building flags: %s" % flags)
-        flags.append("target-os=%s" % str(self.settings.os).lower())
+        "android" "appletv" "bsd" "cygwin" "darwin" "freebsd" "haiku" "hpux" "iphone" "linux"
+        "netbsd" "openbsd" "osf" "qnx" "qnxnto" "sgi" "solaris" "unix" "unixware" "windows" "vms" "vxworks" "elf"
+
+        target = {"Windows": "windows",
+                  "Macos": "darwin",
+                  "Linux": "linux",
+                  "Android": "android",
+                  "iOS": "iphone",
+                  "watchOS": "iphone",
+                  "tvOS": "appletv",
+                  "freeBSD": "freebsd"}.get(str(self.settings.os), None)
+
+        if not target:
+            raise Exception("Unknown target for %s" % self.settings.os)
+
+        flags.append("target-os=%s" % target)
         return flags
 
     def create_user_config_jam(self, folder):
