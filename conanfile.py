@@ -137,7 +137,7 @@ class BoostConan(ConanFile):
         flags.append("link=%s" % ("static" if not self.options.shared else "shared"))
         flags.append("variant=%s" % str(self.settings.build_type).lower())
         if architecture == 'x86':
-            flags.append('address-model=32')
+            flags.append('address-usemodel=32')
         elif architecture == 'x86_64':
             flags.append('address-model=64')
 
@@ -224,12 +224,12 @@ class BoostConan(ConanFile):
                     self.deps_cpp_info["bzip2"].include_paths[0].replace('\\', '/'),
                     self.deps_cpp_info["bzip2"].lib_paths[0].replace('\\', '/'))
 
-        subs = self.get_toolset_name() if tools.cross_building(self.settings) \
-            else str(self.settings.compiler.version)
-
-        contents += '\nusing %s : %s : "%s" ' % (compiler_set,
-                                                 subs,
-                                                 compiler_command)
+        if self.settings.compiler != "Visual Studio":
+            subs = self.get_toolset_name() if tools.cross_building(self.settings) \
+                else str(self.settings.compiler.version)
+            contents += '\nusing "%s" : "%s" : "%s" ' % (compiler_set,
+                                                         subs,
+                                                         compiler_command)
         contents += " :\n"
         if "AR" in os.environ:
             contents += '<archiver>"%s" ' % tools.which(os.environ["AR"]).replace("\\", "/")
