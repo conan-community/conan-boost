@@ -5,6 +5,10 @@ enable_testing()
 set(Boost_DEBUG 1)
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 
+if(CONAN_SETTINGS_OS STREQUAL "Android")
+    set(CONAN_LIBCXX "") # NDK fails when specified: https://github.com/android-ndk/ndk/issues/541
+endif()
+
 CONAN_BASIC_SETUP()
 
 IF(NOT HEADER_ONLY)

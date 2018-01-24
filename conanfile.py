@@ -18,6 +18,7 @@ class BoostConan(ConanFile):
     version = "1.66.0"
     settings = "os", "arch", "compiler", "build_type"
     folder_name = "boost_%s" % version.replace(".", "_")
+    description = "Boost provides free peer-reviewed portable C++ source libraries"
     # The current python option requires the package to be built locally, to find default Python
     # implementation
     options = {
@@ -92,29 +93,28 @@ class BoostConan(ConanFile):
                     # self.run("%s --show-libraries" % b2_exe)
                     self.run(full_command)
 
-    def get_build_cross(self):
-        architecture = self.settings.get_safe('arch')
-        flags = []
-        self.output.info("Cross building, detecting compiler...")
-        flags.append('toolset={0}-{1}'.format(self.settings.get_safe('compiler'), architecture))
-        flags.append('architecture=' + 'arm' if architecture.startswith('arm') else architecture)
-        # Let's just assume it's 32-bit... 64-bit is pretty rare outside of x86_64
-        flags.append('address-model=32')
-        if self.settings.get_safe('os').lower() in ('linux', 'android'):
-            flags.append('binary-format=elf')
+    def get_toolset_name(self):
+        if tools.cross_building(self.settings):
+            return "%s_%s" % (self.settings.os.lower(), self.settings.arch)
         else:
-            raise Exception("I'm so sorry! I don't know the appropriate binary "
-                            "format for your architecture. :'(")
-        if architecture.startswith('arm'):
-            if 'hf' in architecture:
-                flags.append('-mfloat-abi=hard')
-            flags.append('abi=aapcs')
-        else:
-            raise Exception("I'm so sorry! I don't know the appropriate ABI for "
-                            "your architecture. :'(")
-        self.output.info("Cross building flags: %s" % flags)
-        flags.append("target-os=%s" % str(self.settings.os).lower())
-        return flags
+            if self.settings.compiler == "Visual Studio":
+                cversion = self.settings.compiler.version
+                _msvc_version = "14.1" if cversion == "15" else "%s.0" % cversion
+                return "msvc-%s" % _msvc_version
+            elif not self.settings.os == "Windows" and self.settings.compiler == "gcc" and \
+                    str(self.settings.compiler.version)[0] >= "5":
+                # For GCC >= v5 we only need the major otherwise Boost doesn't find the compiler
+                # The NOT windows check is necessary to exclude MinGW:
+                return "%s-%s" % (self.settings.compiler,
+                                  str(self.settings.compiler.version)[0])
+            elif str(self.settings.compiler) in ["clang", "gcc"]:
+                # For GCC < v5 and Clang we need to provide the entire version string
+                return "%s-%s" % (self.settings.compiler,
+                                  str(self.settings.compiler.version))
+            elif self.settings.compiler == "apple-clang":
+                return "clang"
+            else:
+                return self.settings.compiler
 
     def get_build_flags(self):
 
@@ -124,23 +124,11 @@ class BoostConan(ConanFile):
         if self.settings.compiler == "gcc":
             flags.append("--layout=system")
 
-        if tools.cross_building(self.settings) and architecture not in ['x86', 'x86_64']:
+        flags.append("toolset=%s" % self.get_toolset_name())
+
+        if tools.cross_building(self.settings):
             flags = self.get_build_cross()
         else:
-            if self.settings.compiler == "Visual Studio":
-                cversion = self.settings.compiler.version
-                _msvc_version = "14.1" if  cversion == "15" else "%s.0" % cversion
-                flags.append("toolset=msvc-%s" % _msvc_version)
-            elif not self.settings.os == "Windows" and self.settings.compiler == "gcc" and \
-                    str(self.settings.compiler.version)[0] >= "5":
-                # For GCC >= v5 we only need the major otherwise Boost doesn't find the compiler
-                # The NOT windows check is necessary to exclude MinGW:
-                flags.append("toolset=%s-%s" % (self.settings.compiler,
-                                                str(self.settings.compiler.version)[0]))
-            elif str(self.settings.compiler) in ["clang", "gcc"]:
-                # For GCC < v5 and Clang we need to provide the entire version string
-                flags.append("toolset=%s-%s" % (self.settings.compiler,
-                                                str(self.settings.compiler.version)))
             if self.settings.compiler == "Visual Studio" and self.settings.compiler.runtime:
                 flags.append("runtime-link=%s" % ("static" if "MT" in str(self.settings.compiler.runtime) else "shared"))
 
@@ -162,21 +150,23 @@ class BoostConan(ConanFile):
                 cxx_flags.append("-fPIC")
 
         # LIBCXX DEFINITION FOR BOOST B2
-        try:
-            if str(self.settings.compiler.libcxx) == "libstdc++":
-                flags.append("define=_GLIBCXX_USE_CXX11_ABI=0")
-            elif str(self.settings.compiler.libcxx) == "libstdc++11":
-                flags.append("define=_GLIBCXX_USE_CXX11_ABI=1")
-            if "clang" in str(self.settings.compiler):
-                if str(self.settings.compiler.libcxx) == "libc++":
-                    cxx_flags.append("-stdlib=libc++")
-                    cxx_flags.append("-std=c++11")
-                    flags.append('linkflags="-stdlib=libc++"')
-                else:
-                    cxx_flags.append("-stdlib=libstdc++")
-                    cxx_flags.append("-std=c++11")
-        except:
-            pass
+        # Standalone toolchain fails when declare the std lib
+        if self.settings.os != "Android":
+            try:
+                if str(self.settings.compiler.libcxx) == "libstdc++":
+                    flags.append("define=_GLIBCXX_USE_CXX11_ABI=0")
+                elif str(self.settings.compiler.libcxx) == "libstdc++11":
+                    flags.append("define=_GLIBCXX_USE_CXX11_ABI=1")
+                if "clang" in str(self.settings.compiler):
+                    if str(self.settings.compiler.libcxx) == "libc++":
+                        cxx_flags.append("-stdlib=libc++")
+                        cxx_flags.append("-std=c++11")
+                        flags.append('linkflags="-stdlib=libc++"')
+                    else:
+                        cxx_flags.append("-stdlib=libstdc++")
+                        cxx_flags.append("-std=c++11")
+            except:
+                pass
 
         cxx_flags = 'cxxflags="%s"' % " ".join(cxx_flags) if cxx_flags else ""
         flags.append(cxx_flags)
@@ -190,6 +180,8 @@ class BoostConan(ConanFile):
         """To help locating the zlib and bzip2 deps"""
         self.output.warn("Patching user-config.jam")
         contents = ""
+        compiler_set = {"apple-clang": "clang"}.get(str(self.settings.compiler),
+                                                str(self.settings.compiler))
 
         if self.zip_bzip2_requires_needed:
             contents = "\nusing zlib : 1.2.11 : <include>%s <search>%s ;" % (
@@ -200,20 +192,18 @@ class BoostConan(ConanFile):
                     self.deps_cpp_info["bzip2"].include_paths[0].replace('\\', '/'),
                     self.deps_cpp_info["bzip2"].lib_paths[0].replace('\\', '/'))
 
-        if not tools.cross_building(self.settings) and self.settings.compiler in ("gcc", "clang"):
-            compiler = os.environ.get('CC', None) or "gcc"
-            contents += '\nusing %s : %s : "%s" ; ' % (self.settings.compiler,
+        if not tools.cross_building(self.settings):
+            compiler = os.environ.get('CXX', None) or compiler_set
+            contents += '\nusing %s : %s : "%s" ; ' % (compiler_set,
                                                        self.settings.compiler.version,
-                                                       tools.which(compiler).replace("\\", "/"))
-
-        if tools.cross_building(self.settings) and self.settings.arch not in ["x86_64", "x86"]:
-            # We only need special instructions for non-x86 CPUs.
-            # # Boost seems to handle x86 just fine without modding any jam files
-            cross_compiler = tools.which(os.environ['CXX']).replace("\\", "/")
+                                                       compiler.replace("\\", "/"))
+        else:  # We create the tool following architecture
+            cross_compiler = tools.which(os.environ['CXX']).replace("\\", "/") or compiler_set
             contents += '\nusing {0} : {1} : "{2}"'.format(
-                    self.settings.get_safe('compiler'),
-                    self.settings.arch,
+                    compiler_set,
+                    self.get_toolset_name(),
                     cross_compiler)
+
             contents += " :\n"
             if "AR" in os.environ:
                 contents += '<archiver>"%s" ' % tools.which(os.environ["AR"]).replace("\\", "/")
@@ -223,11 +213,39 @@ class BoostConan(ConanFile):
                 contents += '<cxxflags>"%s" ' % os.environ["CXXFLAGS"]
             if "CFLAGS" in os.environ:
                 contents += '<cflags>"%s" ' % os.environ["CFLAGS"]
+            if "LDFLAGS" in os.environ:
+                contents += '<ldflags>"%s" ' % os.environ["LDFLAGS"]
             contents += " ;"
 
         self.output.warn(contents)
         filename = "%s/user-config.jam" % folder
         tools.save(filename,  contents)
+
+    def get_build_cross(self):
+        architecture = self.settings.get_safe('arch')
+        flags = []
+        self.output.info("Cross building, detecting compiler...")
+        flags.append('architecture=%s' % ('arm' if architecture.startswith('arm') else architecture))
+        # Let's just assume it's 32-bit... 64-bit is pretty rare outside of x86_64
+        flags.append('address-model=32')
+        if self.settings.get_safe('os').lower() in ('linux', 'android'):
+            flags.append('binary-format=elf')
+        else:
+            raise Exception("I'm so sorry! I don't know the appropriate binary "
+                            "format for your architecture. :'(")
+        if architecture.startswith('arm'):
+            if 'hf' in architecture:
+                flags.append('-mfloat-abi=hard')
+            flags.append('abi=aapcs')
+        elif architecture in ["x86", "x86_64"]:
+            pass
+        else:
+            raise Exception("I'm so sorry! I don't know the appropriate ABI for "
+                            "your architecture. :'(")
+        self.output.info("Cross building flags: %s" % flags)
+        flags.append("target-os=%s" % str(self.settings.os).lower())
+        return flags
+
 
     ##################### BOOSTRAP METHODS ###########################
     def _get_boostrap_toolset(self):
@@ -246,7 +264,9 @@ class BoostConan(ConanFile):
             with tools.vcvars(self.settings) if self.settings.compiler == "Visual Studio" else tools.no_op():
                 self.output.info("Using %s %s" % (self.settings.compiler, self.settings.compiler.version))
                 with tools.chdir(folder):
-                    self.run("%s %s" % (bootstrap, self._get_boostrap_toolset()))
+                    cmd = "%s %s" % (bootstrap, self._get_boostrap_toolset())
+                    self.output.info(cmd)
+                    self.run(cmd)
         except Exception:
             self.output.warn(tools.load(os.path.join(folder, "bootstrap.log")))
             raise

@@ -23,6 +23,7 @@ class DefaultNameConan(ConanFile):
             cmake.definitions["HEADER_ONLY"] = "TRUE"
         if self.options["boost"].python:
             cmake.definitions["WITH_PYTHON"] = "TRUE"
+
         cmake.configure()
         cmake.build()
 
