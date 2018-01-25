@@ -97,36 +97,38 @@ class BoostConan(ConanFile):
 
     def get_build_flags(self):
 
-        architecture = self.settings.get_safe('arch')
-        flags = []
+        if tools.cross_building(self.settings):
+            flags = self.get_build_cross_flags()
+        else:
+            flags = []
+            if self.settings.arch == 'x86' and 'address-model=32' not in flags:
+                flags.append('address-model=32')
+            elif self.settings.arch == 'x86_64' and 'address-model=64' not in flags:
+                flags.append('address-model=64')
 
         if self.settings.compiler == "gcc":
             flags.append("--layout=system")
 
-        if tools.cross_building(self.settings):
-            flags = self.get_build_cross_flags()
-        else:
-            if self.settings.compiler == "Visual Studio" and self.settings.compiler.runtime:
-                flags.append("runtime-link=%s" % ("static" if "MT" in str(self.settings.compiler.runtime) else "shared"))
+        if self.settings.compiler == "Visual Studio" and self.settings.compiler.runtime:
+            flags.append("runtime-link=%s" % ("static" if "MT" in str(self.settings.compiler.runtime) else "shared"))
+
+        if self.settings.os == "Windows" and self.settings.compiler == "gcc":
+            flags.append("threading=multi")
 
         flags.append("link=%s" % ("static" if not self.options.shared else "shared"))
         flags.append("variant=%s" % str(self.settings.build_type).lower())
-        if architecture == 'x86' and not 'address-model=32' in flags:
-            flags.append('address-model=32')
-        elif architecture == 'x86_64' and not 'address-model=64' in flags:
-            flags.append('address-model=64')
 
         for libname in lib_list:
             if getattr(self.options, "without_%s" % libname):
                 flags.append("--without-%s" % libname)
 
+        # CXX FLAGS
         cxx_flags = []
         # fPIC DEFINITION
         if self.settings.compiler != "Visual Studio":
             if self.options.fPIC:
                 cxx_flags.append("-fPIC")
 
-        # LIBCXX DEFINITION FOR BOOST B2
         # Standalone toolchain fails when declare the std lib
         if self.settings.os != "Android":
             try:
@@ -147,9 +149,6 @@ class BoostConan(ConanFile):
 
         cxx_flags = 'cxxflags="%s"' % " ".join(cxx_flags) if cxx_flags else ""
         flags.append(cxx_flags)
-
-        if self.settings.os == "Windows" and self.settings.compiler == "gcc":
-            flags.append("threading=multi")
 
         return flags
 
