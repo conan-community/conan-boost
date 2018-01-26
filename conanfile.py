@@ -271,8 +271,10 @@ class BoostConan(ConanFile):
                     cmd = "%s %s" % (bootstrap, self._get_boostrap_toolset())
                     self.output.info(cmd)
                     self.run(cmd)
-        except Exception:
-            self.output.warn(tools.load(os.path.join(folder, "bootstrap.log")))
+        except Exception as exc:
+            self.output.warn(str(exc))
+            if os.path.join(folder, "bootstrap.log"):
+                self.output.warn(tools.load(os.path.join(folder, "bootstrap.log")))
             raise
         return os.path.join(folder, "b2.exe") if tools.os_info.is_windows else os.path.join(folder, "b2")
 
