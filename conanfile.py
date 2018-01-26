@@ -239,7 +239,9 @@ class BoostConan(ConanFile):
         elif not self.settings.os == "Windows" and compiler == "gcc" and compiler_version[0] >= "5":
             # For GCC >= v5 we only need the major otherwise Boost doesn't find the compiler
             # The NOT windows check is necessary to exclude MinGW:
-            if not tools.which("%s-%s" % (compiler, compiler_version[0])):
+            if not tools.which("g++-%s" % compiler_version[0]):
+                # In fedora 24, 25 the gcc is 6, but there is no g++-6 and the detection is 6.3.1
+                # so b2 fails because 6 != 6.3.1. Specify the exe to avoid the smart detection
                 executable = "g++"
             else:
                 executable = ""
