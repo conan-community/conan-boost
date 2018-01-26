@@ -206,12 +206,11 @@ class BoostConan(ConanFile):
                     self.deps_cpp_info["bzip2"].include_paths[0].replace('\\', '/'),
                     self.deps_cpp_info["bzip2"].lib_paths[0].replace('\\', '/'))
 
-        toolset, version = self.get_toolset_and_version()
-
+        toolset, version, exe = self.get_toolset_version_and_exe()
+        exe = compiler_command or exe  # Prioritize CXX
         # Specify here the toolset with the binary if present if don't empty parameter : :
         contents += '\nusing "%s" : "%s" : ' % (toolset, version)
-        if compiler_command:
-            contents += ' "%s"' % compiler_command.replace("\\", "/")
+        contents += ' "%s"' % exe.replace("\\", "/")
 
         contents += " : \n"
         if "AR" in os.environ:
@@ -230,26 +229,30 @@ class BoostConan(ConanFile):
         filename = "%s/user-config.jam" % folder
         tools.save(filename,  contents)
 
-    def get_toolset_and_version(self):
+    def get_toolset_version_and_exe(self):
         compiler_version = str(self.settings.compiler.version)
         compiler = str(self.settings.compiler)
         if self.settings.compiler == "Visual Studio":
             cversion = self.settings.compiler.version
             _msvc_version = "14.1" if cversion == "15" else "%s.0" % cversion
-            return "msvc", _msvc_version
+            return "msvc", _msvc_version, ""
         elif not self.settings.os == "Windows" and compiler == "gcc" and compiler_version[0] >= "5":
             # For GCC >= v5 we only need the major otherwise Boost doesn't find the compiler
             # The NOT windows check is necessary to exclude MinGW:
-            return compiler, compiler_version[0]
+            if not tools.which("%s-%s" % (compiler, compiler_version[0])):
+                executable = "g++"
+            else:
+                executable = ""
+            return compiler, compiler_version[0], executable
         elif str(self.settings.compiler) in ["clang", "gcc"]:
             # For GCC < v5 and Clang we need to provide the entire version string
-            return compiler, compiler_version
+            return compiler, compiler_version, ""
         elif self.settings.compiler == "apple-clang":
-            return "clang", compiler_version
+            return "clang", compiler_version, ""
         elif self.settings.compiler == "sun-cc":
-            return "sunpro", compiler_version
+            return "sunpro", compiler_version, ""
         else:
-            return compiler, compiler_version
+            return compiler, compiler_version, ""
 
     ##################### BOOSTRAP METHODS ###########################
     def _get_boostrap_toolset(self):
