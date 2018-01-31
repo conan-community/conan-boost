@@ -172,8 +172,6 @@ class BoostConan(ConanFile):
             raise Exception("I'm so sorry! I don't know the appropriate ABI for "
                             "your architecture. :'(")
         self.output.info("Cross building flags: %s" % flags)
-        "android" "appletv" "bsd" "cygwin" "darwin" "freebsd" "haiku" "hpux" "iphone" "linux"
-        "netbsd" "openbsd" "osf" "qnx" "qnxnto" "sgi" "solaris" "unix" "unixware" "windows" "vms" "vxworks" "elf"
 
         target = {"Windows": "windows",
                   "Macos": "darwin",
@@ -236,7 +234,7 @@ class BoostConan(ConanFile):
             cversion = self.settings.compiler.version
             _msvc_version = "14.1" if cversion == "15" else "%s.0" % cversion
             return "msvc", _msvc_version, ""
-        elif not self.settings.os == "Windows" and compiler == "gcc" and compiler_version[0] >= "5":
+        elif compiler == "gcc" and compiler_version[0] >= "5":
             # For GCC >= v5 we only need the major otherwise Boost doesn't find the compiler
             # The NOT windows check is necessary to exclude MinGW:
             if not tools.which("g++-%s" % compiler_version[0]):
