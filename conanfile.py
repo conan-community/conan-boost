@@ -342,7 +342,8 @@ class BoostConan(ConanFile):
                     break
             else:
                 self.output.info("Missing in order: %s" % real_lib_name)
-                missing_order_info.append(real_lib_name)  # Assume they do not depend on other
+                if "_exec_monitor" not in real_lib_name:  # https://github.com/bincrafters/community/issues/94
+                    missing_order_info.append(real_lib_name)  # Assume they do not depend on other
 
         self.cpp_info.libs = [x for x in self.cpp_info.libs if x is not None] + missing_order_info
 
