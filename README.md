@@ -24,7 +24,7 @@ If you handle multiple dependencies in your project is better to add a *conanfil
     boost/1.66.0@conan/stable
 
     [options]
-    boost:shared=true # false
+    boost:shared=True # False
     # Take a look for all available options in conanfile.py
 
     [generators]
