@@ -331,21 +331,25 @@ class BoostConan(ConanFile):
     def package_info(self):
         gen_libs = tools.collect_libs(self)
 
-        self.cpp_info.libs = [None for _ in range(len(lib_list))]
+        # List of lists, so if more than one matches the lib like serialization and wserialization
+        # both will be added to the list
+        ordered_libs = [[] for _ in range(len(lib_list))]
 
         # The order is important, reorder following the lib_list order
         missing_order_info = []
         for real_lib_name in gen_libs:
             for pos, alib in enumerate(lib_list):
                 if os.path.splitext(real_lib_name)[0].split("-")[0].endswith(alib):
-                    self.cpp_info.libs[pos] = real_lib_name
+                    ordered_libs[pos].append(real_lib_name)
                     break
             else:
-                self.output.info("Missing in order: %s" % real_lib_name)
+                # self.output.info("Missing in order: %s" % real_lib_name)
                 if "_exec_monitor" not in real_lib_name:  # https://github.com/bincrafters/community/issues/94
                     missing_order_info.append(real_lib_name)  # Assume they do not depend on other
 
-        self.cpp_info.libs = [x for x in self.cpp_info.libs if x is not None] + missing_order_info
+        # Flat the list and append the missing order
+        self.cpp_info.libs = [item for sublist in ordered_libs
+                                      for item in sublist if sublist] + missing_order_info
 
         if self.options.without_test:  # remove boost_unit_test_framework
             self.cpp_info.libs = [lib for lib in self.cpp_info.libs if "unit_test" not in lib]
