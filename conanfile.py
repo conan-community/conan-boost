@@ -1,7 +1,6 @@
 from conans import ConanFile
 from conans import tools
 import os
-import sys
 
 # From from *1 (see below, b2 --show-libraries), also ordered following linkage order
 # see https://github.com/Kitware/CMake/blob/master/Modules/FindBoost.cmake to know the order
@@ -311,19 +310,10 @@ class BoostConan(ConanFile):
         for libname in os.listdir(os.path.join(self.package_folder, "lib")):
             new_name = libname
             libpath = os.path.join(self.package_folder, "lib", libname)
-            if self.settings.compiler == "Visual Studio":
+            if "-" in libname:
+                new_name = libname.split("-", 1)[0] + "." + libname.split(".")[-1]
                 if new_name.startswith("lib"):
-                    if os.path.isfile(libpath):
-                        new_name = libname[3:]
-                if "-s-" in libname:
-                    new_name = new_name.replace("-s-", "-")
-                elif "-sgd-" in libname:
-                    new_name = new_name.replace("-sgd-", "-gd-")
-
-            for arch in ["x", "a", "i", "s", "m", "p"]:  # Architectures
-                for addr in ["32", "64"]:  # Model address
-                    new_name = new_name.replace("-%s%s-" % (arch, addr), "-")
-
+                    new_name = new_name[3:]
             renames.append([libpath, os.path.join(self.package_folder, "lib", new_name)])
 
         for original, new in renames:
