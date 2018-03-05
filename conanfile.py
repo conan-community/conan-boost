@@ -1,7 +1,6 @@
 from conans import ConanFile
 from conans import tools
 import os
-import sys
 
 # From from *1 (see below, b2 --show-libraries), also ordered following linkage order
 # see https://github.com/Kitware/CMake/blob/master/Modules/FindBoost.cmake to know the order
@@ -59,13 +58,16 @@ class BoostConan(ConanFile):
             self.info.header_only()
 
     def source(self):
-        zip_name = "%s.zip" % self.folder_name if sys.platform == "win32" else "%s.tar.gz" % self.folder_name
-        url = "http://sourceforge.net/projects/boost/files/boost/%s/%s/download" % (self.version, zip_name)
-        self.output.info("Downloading %s..." % url)
-        tools.download(url, zip_name)
+        if tools.os_info.is_windows:
+            sha256 = "e1c55ebb00886c1a96528e4024be98a38b815115f62ecfe878fcf587ba715aad"
+            extension = ".zip"
+        else:
+            sha256 = "bd0df411efd9a585e5a2212275f8762079fed8842264954675a4fddc46cfcf60"
+            extension = ".tar.gz"
 
-        tools.unzip(zip_name)
-        os.unlink(zip_name)
+        zip_name = "%s%s" % (self.folder_name, extension)
+        url = "https://dl.bintray.com/boostorg/release/%s/source/%s" % (self.version, zip_name)
+        tools.get(url, sha256=sha256)
 
     ##################### BUILDING METHODS ###########################
 
@@ -308,19 +310,10 @@ class BoostConan(ConanFile):
         for libname in os.listdir(os.path.join(self.package_folder, "lib")):
             new_name = libname
             libpath = os.path.join(self.package_folder, "lib", libname)
-            if self.settings.compiler == "Visual Studio":
+            if "-" in libname:
+                new_name = libname.split("-", 1)[0] + "." + libname.split(".")[-1]
                 if new_name.startswith("lib"):
-                    if os.path.isfile(libpath):
-                        new_name = libname[3:]
-                if "-s-" in libname:
-                    new_name = new_name.replace("-s-", "-")
-                elif "-sgd-" in libname:
-                    new_name = new_name.replace("-sgd-", "-gd-")
-
-            for arch in ["x", "a", "i", "s", "m", "p"]:  # Architectures
-                for addr in ["32", "64"]:  # Model address
-                    new_name = new_name.replace("-%s%s-" % (arch, addr), "-")
-
+                    new_name = new_name[3:]
             renames.append([libpath, os.path.join(self.package_folder, "lib", new_name)])
 
         for original, new in renames:
