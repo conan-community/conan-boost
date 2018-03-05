@@ -59,13 +59,16 @@ class BoostConan(ConanFile):
             self.info.header_only()
 
     def source(self):
-        zip_name = "%s.zip" % self.folder_name if sys.platform == "win32" else "%s.tar.gz" % self.folder_name
-        url = "http://sourceforge.net/projects/boost/files/boost/%s/%s/download" % (self.version, zip_name)
-        self.output.info("Downloading %s..." % url)
-        tools.download(url, zip_name)
+        if tools.os_info.is_windows:
+            sha256 = "e1c55ebb00886c1a96528e4024be98a38b815115f62ecfe878fcf587ba715aad"
+            extension = ".zip"
+        else:
+            sha256 = "bd0df411efd9a585e5a2212275f8762079fed8842264954675a4fddc46cfcf60"
+            extension = ".tar.gz"
 
-        tools.unzip(zip_name)
-        os.unlink(zip_name)
+        zip_name = "%s%s" % (self.folder_name, extension)
+        url = "https://dl.bintray.com/boostorg/release/%s/source/%s" % (self.version, zip_name)
+        tools.get(url, sha256=sha256)
 
     ##################### BUILDING METHODS ###########################
 
