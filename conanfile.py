@@ -321,6 +321,31 @@ class BoostConan(ConanFile):
                 self.output.info("Rename: %s => %s" % (original, new))
                 os.rename(original, new)
 
+    def _get_glibc_version(self):
+        def subprocess_wrapper(cmd):
+            import subprocess, sys
+            output = None
+            if sys.version_info >= (3, 5):
+                output = subprocess.run(args=cmd, stdout=subprocess.PIPE)
+                if output.returncode == 0:
+                    output = str(output.stdout).split('\\n')[0]
+                else:
+                    output = None
+            else:
+                try:
+                    output = subprocess.check_output(args=cmd)
+                except subprocess.CalledProcessError:
+                    output = None
+            return output
+
+        import re
+        glibc_version = subprocess_wrapper(["ldd", "--version"])
+        if glibc_version is not None:
+            regex_res = re.search(r'[0-9]+\.[0-9]+', glibc_version)
+            if regex_res is not None:
+                return regex_res.group(0)
+        return None
+
     def package_info(self):
         gen_libs = tools.collect_libs(self)
 
@@ -346,6 +371,13 @@ class BoostConan(ConanFile):
 
         if self.options.without_test:  # remove boost_unit_test_framework
             self.cpp_info.libs = [lib for lib in self.cpp_info.libs if "unit_test" not in lib]
+
+        if self.settings.os == "Linux":
+            glibc_version = self._get_glibc_version()
+            if glibc_version is not None and glibc_version < "2.17":
+                self.output.info("glibc version {} < 2.17: add -lrt".format(glibc_version))
+                self.cpp_info.sharedlinkflags.append('-lrt')
+                self.cpp_info.exelinkflags.append('-lrt')
 
         self.output.info("LIBRARIES: %s" % self.cpp_info.libs)
         self.output.info("Package folder: %s" % self.package_folder)
