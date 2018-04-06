@@ -158,7 +158,9 @@ class BoostConan(ConanFile):
         arch = self.settings.get_safe('arch')
         flags = []
         self.output.info("Cross building, detecting compiler...")
-        flags.append('architecture=%s' % ('arm' if arch.startswith('arm') else arch))
+        arch = "arm" if arch.startswith("arm") else arch
+        arch = "x86" if arch == "x86_64" else arch
+        flags.append('architecture=%s' % arch)
         bits = {"x86_64": "64", "armv8": "64"}.get(str(self.settings.arch), "32")
         flags.append('address-model=%s' % bits)
         if self.settings.get_safe('os').lower() in ('linux', 'android'):
