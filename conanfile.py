@@ -14,7 +14,7 @@ lib_list = ['math', 'wave', 'container', 'exception', 'graph', 'iostreams', 'loc
 
 class BoostConan(ConanFile):
     name = "boost"
-    version = "1.66.0"
+    version = "1.64.0"
     settings = "os", "arch", "compiler", "build_type"
     folder_name = "boost_%s" % version.replace(".", "_")
     description = "Boost provides free peer-reviewed portable C++ source libraries"
@@ -49,7 +49,7 @@ class BoostConan(ConanFile):
         if self.zip_bzip2_requires_needed:
             self.requires("bzip2/1.0.6@conan/stable")
             self.options["bzip2"].shared = False
-            
+
             self.requires("zlib/1.2.11@conan/stable")
             self.options["zlib"].shared = False
 
@@ -59,10 +59,10 @@ class BoostConan(ConanFile):
 
     def source(self):
         if tools.os_info.is_windows:
-            sha256 = "e1c55ebb00886c1a96528e4024be98a38b815115f62ecfe878fcf587ba715aad"
+            sha256 = "b99973c805f38b549dbeaf88701c0abeff8b0e8eaa4066df47cac10a32097523"
             extension = ".zip"
         else:
-            sha256 = "bd0df411efd9a585e5a2212275f8762079fed8842264954675a4fddc46cfcf60"
+            sha256 = "0445c22a5ef3bd69f5dfb48354978421a85ab395254a26b1ffb0aa1bfd63a108"
             extension = ".tar.gz"
 
         zip_name = "%s%s" % (self.folder_name, extension)
