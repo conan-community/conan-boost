@@ -13,10 +13,6 @@ class DefaultNameConan(ConanFile):
     settings = "os", "compiler", "arch", "build_type"
     generators = "cmake"
 
-    def configure(self):
-        if self.options["boost"].header_only:
-            self.settings.clear()
-
     def build(self):
         cmake = CMake(self)
         if self.options["boost"].header_only:
