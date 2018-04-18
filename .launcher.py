@@ -8,7 +8,7 @@ from conans.client.output import ConanOutput
 
 env = {"CONAN_USERNAME": "lasote",
        "CONAN_CHANNEL": "testing",
-       "CONAN_REFERENCE": "boost/1.66.0"}
+       "CONAN_REFERENCE": "boost/1.67.0"}
 
 if platform.system() == "Windows":
     env["CONAN_VISUAL_VERSIONS"] = "15, 14, 12"
