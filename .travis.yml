@@ -25,7 +25,6 @@ matrix:
 
       - <<: *linux
         env: HEADER_ONLY=1 CONAN_CURRENT_PAGE=1 CONAN_TOTAL_PAGES=1
-
       - <<: *linux
         env: CONAN_GCC_VERSIONS=4.9 CONAN_DOCKER_IMAGE=lasote/conangcc49 CONAN_CURRENT_PAGE=1 CONAN_TOTAL_PAGES=4
       - <<: *linux
@@ -107,16 +106,16 @@ matrix:
         osx_image: xcode9
         env: CONAN_APPLE_CLANG_VERSIONS=9.0 CONAN_CURRENT_PAGE=4 CONAN_TOTAL_PAGES=4
       - <<: *osx
-        osx_image: xcode9.3beta
+        osx_image: xcode9.3
         env: CONAN_APPLE_CLANG_VERSIONS=9.1 CONAN_CURRENT_PAGE=1 CONAN_TOTAL_PAGES=4
       - <<: *osx
-        osx_image: xcode9.3beta
+        osx_image: xcode9.3
         env: CONAN_APPLE_CLANG_VERSIONS=9.1 CONAN_CURRENT_PAGE=2 CONAN_TOTAL_PAGES=4
       - <<: *osx
-        osx_image: xcode9.3beta
+        osx_image: xcode9.3
         env: CONAN_APPLE_CLANG_VERSIONS=9.1 CONAN_CURRENT_PAGE=3 CONAN_TOTAL_PAGES=4
       - <<: *osx
-        osx_image: xcode9.3beta
+        osx_image: xcode9.3
         env: CONAN_APPLE_CLANG_VERSIONS=9.1 CONAN_CURRENT_PAGE=4 CONAN_TOTAL_PAGES=4
 
 
