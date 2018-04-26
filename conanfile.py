@@ -308,21 +308,22 @@ class BoostConan(ConanFile):
         self.renames_to_make_cmake_find_package_happy()
 
     def renames_to_make_cmake_find_package_happy(self):
-        # CMake findPackage help
-        renames = []
-        for libname in os.listdir(os.path.join(self.package_folder, "lib")):
-            new_name = libname
-            libpath = os.path.join(self.package_folder, "lib", libname)
-            if "-" in libname:
-                new_name = libname.split("-", 1)[0] + "." + libname.split(".")[-1]
-                if new_name.startswith("lib"):
-                    new_name = new_name[3:]
-            renames.append([libpath, os.path.join(self.package_folder, "lib", new_name)])
+        if not self.options.skip_lib_rename:
+            # CMake findPackage help
+            renames = []
+            for libname in os.listdir(os.path.join(self.package_folder, "lib")):
+                new_name = libname
+                libpath = os.path.join(self.package_folder, "lib", libname)
+                if "-" in libname:
+                    new_name = libname.split("-", 1)[0] + "." + libname.split(".")[-1]
+                    if new_name.startswith("lib"):
+                        new_name = new_name[3:]
+                renames.append([libpath, os.path.join(self.package_folder, "lib", new_name)])
 
-        for original, new in renames:
-            if original != new and not os.path.exists(new):
-                self.output.info("Rename: %s => %s" % (original, new))
-                os.rename(original, new)
+            for original, new in renames:
+                if original != new and not os.path.exists(new):
+                    self.output.info("Rename: %s => %s" % (original, new))
+                    os.rename(original, new)
 
     def package_info(self):
         gen_libs = tools.collect_libs(self)
