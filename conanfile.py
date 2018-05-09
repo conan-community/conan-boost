@@ -200,13 +200,15 @@ class BoostConan(ConanFile):
 
         contents = ""
         if self.zip_bzip2_requires_needed:
-            contents = "\nusing zlib : 1.2.11 : <include>%s <search>%s ;" % (
+            contents = "\nusing zlib : 1.2.11 : <include>%s <search>%s <name>%s ;" % (
                 self.deps_cpp_info["zlib"].include_paths[0].replace('\\', '/'),
-                self.deps_cpp_info["zlib"].lib_paths[0].replace('\\', '/'))
+                self.deps_cpp_info["zlib"].lib_paths[0].replace('\\', '/'),
+                self.deps_cpp_info["zlib"].libs[0])
             if self.settings.os == "Linux" or self.settings.os == "Macos":
-                contents += "\nusing bzip2 : 1.0.6 : <include>%s <search>%s ;" % (
+                contents += "\nusing bzip2 : 1.0.6 : <include>%s <search>%s <name>%s ;" % (
                     self.deps_cpp_info["bzip2"].include_paths[0].replace('\\', '/'),
-                    self.deps_cpp_info["bzip2"].lib_paths[0].replace('\\', '/'))
+                    self.deps_cpp_info["bzip2"].lib_paths[0].replace('\\', '/'),
+                    self.deps_cpp_info["bzip2"].libs[0])
 
         toolset, version, exe = self.get_toolset_version_and_exe()
         exe = compiler_command or exe  # Prioritize CXX
