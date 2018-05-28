@@ -367,3 +367,5 @@ class BoostConan(ConanFile):
             if self.settings.compiler == "Visual Studio":
                 # DISABLES AUTO LINKING! NO SMART AND MAGIC DECISIONS THANKS!
                 self.cpp_info.defines.extend(["BOOST_ALL_NO_LIB"])
+        
+        self.env_info.BOOST_ROOT = self.package_folder
