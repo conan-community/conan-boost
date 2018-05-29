@@ -119,7 +119,10 @@ class BoostConan(ConanFile):
             flags.append("threading=multi")
 
         flags.append("link=%s" % ("static" if not self.options.shared else "shared"))
-        flags.append("variant=%s" % str(self.settings.build_type).lower())
+        if self.settings.build_type == "Debug":
+            flags.append("variant=debug")
+        else:
+            flags.append("variant=release")
 
         for libname in lib_list:
             if getattr(self.options, "without_%s" % libname):
