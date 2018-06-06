@@ -23,11 +23,12 @@ class BoostConan(ConanFile):
     options = {
         "shared": [True, False],
         "header_only": [True, False],
-        "fPIC": [True, False]
+        "fPIC": [True, False],
+        "skip_lib_rename": [True, False]
     }
     options.update({"without_%s" % libname: [True, False] for libname in lib_list})
 
-    default_options = ["shared=False", "header_only=False", "fPIC=False"]
+    default_options = ["shared=False", "header_only=False", "fPIC=False", "skip_lib_rename=False"]
     default_options.extend(["without_%s=False" % libname for libname in lib_list if libname != "python"])
     default_options.append("without_python=True")
     default_options = tuple(default_options)
@@ -118,7 +119,10 @@ class BoostConan(ConanFile):
             flags.append("threading=multi")
 
         flags.append("link=%s" % ("static" if not self.options.shared else "shared"))
-        flags.append("variant=%s" % str(self.settings.build_type).lower())
+        if self.settings.build_type == "Debug":
+            flags.append("variant=debug")
+        else:
+            flags.append("variant=release")
 
         for libname in lib_list:
             if getattr(self.options, "without_%s" % libname):
@@ -282,7 +286,7 @@ class BoostConan(ConanFile):
                     self.run(cmd)
         except Exception as exc:
             self.output.warn(str(exc))
-            if os.path.join(folder, "bootstrap.log"):
+            if os.path.exists(os.path.join(folder, "bootstrap.log")):
                 self.output.warn(tools.load(os.path.join(folder, "bootstrap.log")))
             raise
         return os.path.join(folder, "b2.exe") if tools.os_info.is_windows else os.path.join(folder, "b2")
@@ -309,21 +313,22 @@ class BoostConan(ConanFile):
         self.renames_to_make_cmake_find_package_happy()
 
     def renames_to_make_cmake_find_package_happy(self):
-        # CMake findPackage help
-        renames = []
-        for libname in os.listdir(os.path.join(self.package_folder, "lib")):
-            new_name = libname
-            libpath = os.path.join(self.package_folder, "lib", libname)
-            if "-" in libname:
-                new_name = libname.split("-", 1)[0] + "." + libname.split(".")[-1]
-                if new_name.startswith("lib"):
-                    new_name = new_name[3:]
-            renames.append([libpath, os.path.join(self.package_folder, "lib", new_name)])
+        if not self.options.skip_lib_rename:
+            # CMake findPackage help
+            renames = []
+            for libname in os.listdir(os.path.join(self.package_folder, "lib")):
+                new_name = libname
+                libpath = os.path.join(self.package_folder, "lib", libname)
+                if "-" in libname:
+                    new_name = libname.split("-", 1)[0] + "." + libname.split(".")[-1]
+                    if new_name.startswith("lib"):
+                        new_name = new_name[3:]
+                renames.append([libpath, os.path.join(self.package_folder, "lib", new_name)])
 
-        for original, new in renames:
-            if original != new and not os.path.exists(new):
-                self.output.info("Rename: %s => %s" % (original, new))
-                os.rename(original, new)
+            for original, new in renames:
+                if original != new and not os.path.exists(new):
+                    self.output.info("Rename: %s => %s" % (original, new))
+                    os.rename(original, new)
 
     def package_info(self):
         gen_libs = tools.collect_libs(self)
@@ -367,3 +372,5 @@ class BoostConan(ConanFile):
             if self.settings.compiler == "Visual Studio":
                 # DISABLES AUTO LINKING! NO SMART AND MAGIC DECISIONS THANKS!
                 self.cpp_info.defines.extend(["BOOST_ALL_NO_LIB"])
+        
+        self.env_info.BOOST_ROOT = self.package_folder

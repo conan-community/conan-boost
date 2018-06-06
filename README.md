@@ -2,7 +2,6 @@
 
 [![Build Status](https://travis-ci.org/lasote/conan-boost.svg?branch=release%2F1.67.0)](https://travis-ci.org/lasote/conan-boost)
 
-
 # conan-boost
 
 Conan package for Boost library
