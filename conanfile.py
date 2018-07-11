@@ -28,7 +28,7 @@ class BoostConan(ConanFile):
     }
     options.update({"without_%s" % libname: [True, False] for libname in lib_list})
 
-    default_options = ["shared=False", "header_only=False", "fPIC=False", "skip_lib_rename=False"]
+    default_options = ["shared=False", "header_only=False", "fPIC=True", "skip_lib_rename=False"]
     default_options.extend(["without_%s=False" % libname for libname in lib_list if libname != "python"])
     default_options.append("without_python=True")
     default_options = tuple(default_options)
