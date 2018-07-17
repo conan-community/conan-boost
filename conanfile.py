@@ -5,8 +5,8 @@ import os
 # From from *1 (see below, b2 --show-libraries), also ordered following linkage order
 # see https://github.com/Kitware/CMake/blob/master/Modules/FindBoost.cmake to know the order
 
-lib_list = ['math', 'wave', 'container', 'exception', 'graph', 'iostreams', 'locale', 'log',
-            'program_options', 'random', 'regex', 'mpi', 'serialization', 'signals',
+lib_list = ['math', 'wave', 'container', 'contract', 'exception', 'graph', 'iostreams', 'locale',
+            'log', 'program_options', 'random', 'regex', 'mpi', 'serialization', 'signals',
             'coroutine', 'fiber', 'context', 'timer', 'thread', 'chrono', 'date_time',
             'atomic', 'filesystem', 'system', 'graph_parallel', 'python',
             'stacktrace', 'test', 'type_erasure']
