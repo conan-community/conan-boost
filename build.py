@@ -22,14 +22,4 @@ if __name__ == "__main__":
                 filtered_builds.append([settings, options, env_vars, build_requires])
             builder.builds = filtered_builds
 
-        if platform.system() == "Linux":
-            filtered_builds = []
-            for settings, options, env_vars, build_requires in builder.builds:
-                filtered_builds.append([settings, options])
-                new_options = copy.copy(options)
-                new_options["boost:fPIC"] = True
-                filtered_builds.append([settings, new_options, env_vars, build_requires])
-            builder.builds = filtered_builds
-
     builder.run()
-
