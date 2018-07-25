@@ -403,7 +403,10 @@ class BoostConan(ConanFile):
                 self.cpp_info.defines.extend(["BOOST_ALL_NO_LIB"])
                 # https://github.com/conan-community/conan-boost/issues/127#issuecomment-404750974
                 self.cpp_info.libs.append("bcrypt")
-        
+            elif self.settings.os == "Linux":
+                # https://github.com/conan-community/conan-boost/issues/135
+                self.cpp_info.libs.append("pthread")
+
         self.env_info.BOOST_ROOT = self.package_folder
 
     def b2_macosx_version(self):
