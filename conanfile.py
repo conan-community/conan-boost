@@ -15,7 +15,7 @@ lib_list = ['math', 'wave', 'container', 'contract', 'exception', 'graph', 'iost
 
 class BoostConan(ConanFile):
     name = "boost"
-    version = "1.67.0"
+    version = "1.68.0"
     settings = "os", "arch", "compiler", "build_type"
     folder_name = "boost_%s" % version.replace(".", "_")
     description = "Boost provides free peer-reviewed portable C++ source libraries"
@@ -61,10 +61,10 @@ class BoostConan(ConanFile):
 
     def source(self):
         if tools.os_info.is_windows:
-            sha256 = "7e37372d8cedd0fd6b7529e9dd67c2cb1c60e6c607aed721f5894d704945a7ec"
+            sha256 = "3b1db0b67079266c40b98329d85916e910bbadfc3db3e860c049056788d4d5cd"
             extension = ".zip"
         else:
-            sha256 = "8aa4e330c870ef50a896634c931adf468b21f8a69b77007e45c444151229f665"
+            sha256 = "da3411ea45622579d419bfda66f45cd0f8c32a181d84adfa936f5688388995cf"
             extension = ".tar.gz"
 
         zip_name = "%s%s" % (self.folder_name, extension)
