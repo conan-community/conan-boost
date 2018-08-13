@@ -25,11 +25,12 @@ class BoostConan(ConanFile):
         "shared": [True, False],
         "header_only": [True, False],
         "fPIC": [True, False],
-        "skip_lib_rename": [True, False]
+        "skip_lib_rename": [True, False],
+        "magic_autolink": [True, False] # enables BOOST_ALL_NO_LIB
     }
     options.update({"without_%s" % libname: [True, False] for libname in lib_list})
 
-    default_options = ["shared=False", "header_only=False", "fPIC=True", "skip_lib_rename=False"]
+    default_options = ["shared=False", "header_only=False", "fPIC=True", "skip_lib_rename=False", "magic_autolink=False"]
     default_options.extend(["without_%s=False" % libname for libname in lib_list if libname != "python"])
     default_options.append("without_python=True")
     default_options = tuple(default_options)
@@ -399,8 +400,13 @@ class BoostConan(ConanFile):
                     self.cpp_info.defines.append("BOOST_PYTHON_STATIC_LIB")
 
             if self.settings.compiler == "Visual Studio":
-                # DISABLES AUTO LINKING! NO SMART AND MAGIC DECISIONS THANKS!
-                self.cpp_info.defines.extend(["BOOST_ALL_NO_LIB"])
+                if self.options.magic_autolink == False:
+                    # DISABLES AUTO LINKING! NO SMART AND MAGIC DECISIONS THANKS!
+                    self.cpp_info.defines.extend(["BOOST_ALL_NO_LIB"])
+                    self.output.info("Disabled magic autolinking (smart and magic decisions)")
+                else:
+                    self.output.info("Enabled magic autolinking (smart and magic decisions)")
+
                 # https://github.com/conan-community/conan-boost/issues/127#issuecomment-404750974
                 self.cpp_info.libs.append("bcrypt")
             elif self.settings.os == "Linux":
