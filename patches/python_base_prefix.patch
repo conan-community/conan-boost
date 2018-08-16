@@ -1,0 +1,25 @@
+diff -ru a/tools/build/src/tools/python.jam b/tools/build/src/tools/python.jam
+--- a/tools/build/src/tools/python.jam	2017-09-02 11:56:19.000000000 +0200
++++ b/tools/build/src/tools/python.jam	2018-04-25 16:09:42.134261039 +0200
+@@ -737,7 +737,7 @@
+     {
+         # Values to be extracted from python's sys module. These will be set by
+         # the probe rule, above, using Jam's dynamic scoping.
+-        local sys-elements = version platform prefix exec_prefix executable ;
++        local sys-elements = version platform base_prefix base_exec_prefix executable ;
+         local sys.$(sys-elements) ;
+ 
+         # Compute the string Python's sys.platform needs to match. If not
+@@ -777,10 +777,10 @@
+                 {
+                     debug-message ...requested configuration matched! ;
+ 
+-                    exec-prefix = $(sys.exec_prefix) ;
++                    exec-prefix = $(sys.base_exec_prefix) ;
+ 
+                     compute-default-paths $(target-os) : $(sys.version) :
+-                        $(sys.prefix) : $(sys.exec_prefix) ;
++                        $(sys.base_prefix) : $(sys.base_exec_prefix) ;
+ 
+                     version = $(sys.version) ;
+                     interpreter-cmd ?= $(cmd) ;

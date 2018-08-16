@@ -1,6 +1,7 @@
 from conans import ConanFile
 from conans import tools
 import os
+import sys
 
 # From from *1 (see below, b2 --show-libraries), also ordered following linkage order
 # see https://github.com/Kitware/CMake/blob/master/Modules/FindBoost.cmake to know the order
@@ -40,6 +41,8 @@ class BoostConan(ConanFile):
     short_paths = True
     no_copy_source = False
 
+    exports = ['patches/*']
+
     def config_options(self):
         if self.settings.compiler == "Visual Studio":
             self.options.remove("fPIC")
@@ -78,6 +81,9 @@ class BoostConan(ConanFile):
         if self.options.header_only:
             self.output.warn("Header only package, skipping build")
             return
+
+        if not self.options.without_python:
+            tools.patch(base_path=os.path.join(self.build_folder, self.folder_name), patch_file='patches/python_base_prefix.patch', strip=1)
 
         b2_exe = self.bootstrap()
         flags = self.get_build_flags()
@@ -233,6 +239,8 @@ class BoostConan(ConanFile):
                 self.deps_cpp_info["bzip2"].include_paths[0].replace('\\', '/'),
                 self.deps_cpp_info["bzip2"].lib_paths[0].replace('\\', '/'),
                 self.deps_cpp_info["bzip2"].libs[0])
+
+        contents += "\nusing python : {} : {} ;".format(sys.version[:3], sys.executable.replace('\\', '/'))
 
         toolset, version, exe = self.get_toolset_version_and_exe()
         exe = compiler_command or exe  # Prioritize CXX
