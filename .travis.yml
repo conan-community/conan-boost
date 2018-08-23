@@ -95,6 +95,26 @@ matrix:
       - <<: *linux
         env: CONAN_GCC_VERSIONS=7 CONAN_DOCKER_IMAGE=lasote/conangcc7 CONAN_CURRENT_PAGE=10
       - <<: *linux
+        env: CONAN_GCC_VERSIONS=8 CONAN_DOCKER_IMAGE=lasote/conangcc8 CONAN_CURRENT_PAGE=1
+      - <<: *linux
+        env: CONAN_GCC_VERSIONS=8 CONAN_DOCKER_IMAGE=lasote/conangcc8 CONAN_CURRENT_PAGE=2
+      - <<: *linux
+        env: CONAN_GCC_VERSIONS=8 CONAN_DOCKER_IMAGE=lasote/conangcc8 CONAN_CURRENT_PAGE=3
+      - <<: *linux
+        env: CONAN_GCC_VERSIONS=8 CONAN_DOCKER_IMAGE=lasote/conangcc8 CONAN_CURRENT_PAGE=4
+      - <<: *linux
+        env: CONAN_GCC_VERSIONS=8 CONAN_DOCKER_IMAGE=lasote/conangcc8 CONAN_CURRENT_PAGE=5
+      - <<: *linux
+        env: CONAN_GCC_VERSIONS=8 CONAN_DOCKER_IMAGE=lasote/conangcc8 CONAN_CURRENT_PAGE=6
+      - <<: *linux
+        env: CONAN_GCC_VERSIONS=8 CONAN_DOCKER_IMAGE=lasote/conangcc8 CONAN_CURRENT_PAGE=7
+      - <<: *linux
+        env: CONAN_GCC_VERSIONS=8 CONAN_DOCKER_IMAGE=lasote/conangcc8 CONAN_CURRENT_PAGE=8
+      - <<: *linux
+        env: CONAN_GCC_VERSIONS=8 CONAN_DOCKER_IMAGE=lasote/conangcc8 CONAN_CURRENT_PAGE=9
+      - <<: *linux
+        env: CONAN_GCC_VERSIONS=8 CONAN_DOCKER_IMAGE=lasote/conangcc8 CONAN_CURRENT_PAGE=10
+      - <<: *linux
         env: CONAN_CLANG_VERSIONS=3.9 CONAN_DOCKER_IMAGE=lasote/conanclang39 CONAN_CURRENT_PAGE=1 CONAN_TOTAL_PAGES=12
       - <<: *linux
         env: CONAN_CLANG_VERSIONS=3.9 CONAN_DOCKER_IMAGE=lasote/conanclang39 CONAN_CURRENT_PAGE=2 CONAN_TOTAL_PAGES=12
@@ -166,6 +186,30 @@ matrix:
         env: CONAN_CLANG_VERSIONS=5.0 CONAN_DOCKER_IMAGE=lasote/conanclang50 CONAN_CURRENT_PAGE=11 CONAN_TOTAL_PAGES=12
       - <<: *linux
         env: CONAN_CLANG_VERSIONS=5.0 CONAN_DOCKER_IMAGE=lasote/conanclang50 CONAN_CURRENT_PAGE=12 CONAN_TOTAL_PAGES=12
+      - <<: *linux
+        env: CONAN_CLANG_VERSIONS=6.0 CONAN_DOCKER_IMAGE=lasote/conanclang60 CONAN_CURRENT_PAGE=1 CONAN_TOTAL_PAGES=12
+      - <<: *linux
+        env: CONAN_CLANG_VERSIONS=6.0 CONAN_DOCKER_IMAGE=lasote/conanclang60 CONAN_CURRENT_PAGE=2 CONAN_TOTAL_PAGES=12
+      - <<: *linux
+        env: CONAN_CLANG_VERSIONS=6.0 CONAN_DOCKER_IMAGE=lasote/conanclang60 CONAN_CURRENT_PAGE=3 CONAN_TOTAL_PAGES=12
+      - <<: *linux
+        env: CONAN_CLANG_VERSIONS=6.0 CONAN_DOCKER_IMAGE=lasote/conanclang60 CONAN_CURRENT_PAGE=4 CONAN_TOTAL_PAGES=12
+      - <<: *linux
+        env: CONAN_CLANG_VERSIONS=6.0 CONAN_DOCKER_IMAGE=lasote/conanclang60 CONAN_CURRENT_PAGE=5 CONAN_TOTAL_PAGES=12
+      - <<: *linux
+        env: CONAN_CLANG_VERSIONS=6.0 CONAN_DOCKER_IMAGE=lasote/conanclang60 CONAN_CURRENT_PAGE=6 CONAN_TOTAL_PAGES=12
+      - <<: *linux
+        env: CONAN_CLANG_VERSIONS=6.0 CONAN_DOCKER_IMAGE=lasote/conanclang60 CONAN_CURRENT_PAGE=7 CONAN_TOTAL_PAGES=12
+      - <<: *linux
+        env: CONAN_CLANG_VERSIONS=6.0 CONAN_DOCKER_IMAGE=lasote/conanclang60 CONAN_CURRENT_PAGE=8 CONAN_TOTAL_PAGES=12
+      - <<: *linux
+        env: CONAN_CLANG_VERSIONS=6.0 CONAN_DOCKER_IMAGE=lasote/conanclang60 CONAN_CURRENT_PAGE=9 CONAN_TOTAL_PAGES=12
+      - <<: *linux
+        env: CONAN_CLANG_VERSIONS=6.0 CONAN_DOCKER_IMAGE=lasote/conanclang60 CONAN_CURRENT_PAGE=10 CONAN_TOTAL_PAGES=12
+      - <<: *linux
+        env: CONAN_CLANG_VERSIONS=6.0 CONAN_DOCKER_IMAGE=lasote/conanclang60 CONAN_CURRENT_PAGE=11 CONAN_TOTAL_PAGES=12
+      - <<: *linux
+        env: CONAN_CLANG_VERSIONS=6.0 CONAN_DOCKER_IMAGE=lasote/conanclang60 CONAN_CURRENT_PAGE=12 CONAN_TOTAL_PAGES=12
       - <<: *osx
         osx_image: xcode7.3
         env: CONAN_APPLE_CLANG_VERSIONS=7.3 CONAN_CURRENT_PAGE=1 CONAN_TOTAL_PAGES=4
