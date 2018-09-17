@@ -34,6 +34,8 @@ class BoostConan(ConanFile):
     default_options = ["shared=False", "header_only=False", "fPIC=True", "skip_lib_rename=False", "magic_autolink=False"]
     default_options.extend(["without_%s=False" % libname for libname in lib_list if libname != "python"])
     default_options.append("without_python=True")
+    default_options.append("bzip2:shared=False")
+    default_options.append("zlib:shared=False")
     default_options = tuple(default_options)
 
     url = "https://github.com/lasote/conan-boost"
@@ -54,10 +56,7 @@ class BoostConan(ConanFile):
     def configure(self):
         if self.zip_bzip2_requires_needed:
             self.requires("bzip2/1.0.6@conan/stable")
-            self.options["bzip2"].shared = False
-            
             self.requires("zlib/1.2.11@conan/stable")
-            self.options["zlib"].shared = False
 
     def package_id(self):
         if self.options.header_only:
