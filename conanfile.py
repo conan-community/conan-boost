@@ -190,6 +190,7 @@ class BoostConan(ConanFile):
         self.output.info("Cross building, detecting compiler...")
         arch = "arm" if arch.startswith("arm") else arch
         arch = "x86" if arch == "x86_64" else arch
+        arch = "power" if arch in ["ppc32", "ppc64"] else arch
         flags.append('architecture=%s' % arch)
         bits = {"x86_64": "64", "armv8": "64"}.get(str(self.settings.arch), "32")
         flags.append('address-model=%s' % bits)
@@ -201,6 +202,8 @@ class BoostConan(ConanFile):
                 flags.append('-mfloat-abi=hard')
             flags.append('abi=aapcs')
         elif arch in ["x86", "x86_64"]:
+            pass
+        elif arch in ["power"]:
             pass
         else:
             raise Exception("I'm so sorry! I don't know the appropriate ABI for "
