@@ -17,7 +17,7 @@ lib_list = ['math', 'wave', 'container', 'contract', 'exception', 'graph', 'iost
 class BoostConan(ConanFile):
     name = "boost"
     version = "1.68.0"
-    settings = "os", "arch", "compiler", "build_type"
+    settings = "os", "arch", "compiler", "build_type", "cppstd"
     folder_name = "boost_%s" % version.replace(".", "_")
     description = "Boost provides free peer-reviewed portable C++ source libraries"
     # The current python option requires the package to be built locally, to find default Python
@@ -135,6 +135,9 @@ class BoostConan(ConanFile):
             if getattr(self.options, "without_%s" % libname):
                 flags.append("--without-%s" % libname)
 
+        if self.settings.cppstd:
+            flags.append("cxxstd=%s" % self.settings.cppstd)
+
         # CXX FLAGS
         cxx_flags = []
         # fPIC DEFINITION
@@ -152,11 +155,9 @@ class BoostConan(ConanFile):
                 if "clang" in str(self.settings.compiler):
                     if str(self.settings.compiler.libcxx) == "libc++":
                         cxx_flags.append("-stdlib=libc++")
-                        cxx_flags.append("-std=c++11")
                         flags.append('linkflags="-stdlib=libc++"')
                     else:
                         cxx_flags.append("-stdlib=libstdc++")
-                        cxx_flags.append("-std=c++11")
             except:
                 pass
 
