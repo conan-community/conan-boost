@@ -243,7 +243,7 @@ class BoostConan(ConanFile):
                 self.deps_cpp_info["bzip2"].lib_paths[0].replace('\\', '/'),
                 self.deps_cpp_info["bzip2"].libs[0])
 
-        contents += "\nusing python : {} : {} ;".format(sys.version[:3], sys.executable.replace('\\', '/'))
+        contents += "\nusing python : {} : \"{}\" ;".format(sys.version[:3], sys.executable.replace('\\', '/'))
 
         toolset, version, exe = self.get_toolset_version_and_exe()
         exe = compiler_command or exe  # Prioritize CXX
