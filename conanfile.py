@@ -261,7 +261,7 @@ class BoostConan(ConanFile):
         if "CFLAGS" in os.environ:
             contents += '<cflags>"%s" ' % os.environ["CFLAGS"]
         if "LDFLAGS" in os.environ:
-            contents += '<ldflags>"%s" ' % os.environ["LDFLAGS"]
+            contents += '<linkflags>"%s" ' % os.environ["LDFLAGS"]
 
         if self.settings.os == "iOS":
             sdk_name = tools.apple_sdk_name(self.settings)
