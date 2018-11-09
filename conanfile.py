@@ -1,5 +1,7 @@
 from conans import ConanFile
 from conans import tools
+from conans.client.build.cppstd_flags import cppstd_flag
+
 import os
 import sys
 
@@ -136,7 +138,14 @@ class BoostConan(ConanFile):
                 flags.append("--without-%s" % libname)
 
         if self.settings.cppstd:
-            flags.append("cxxstd=%s" % self.settings.cppstd)
+            toolset, _, _ = self.get_toolset_version_and_exe()
+            flags.append("toolset=%s" % toolset)
+            flags.append("cxxflags=%s" % cppstd_flag(
+                    self.settings.get_safe("compiler"),
+                    self.settings.get_safe("compiler.version"),
+                    self.settings.get_safe("cppstd")
+                )
+            )
 
         # CXX FLAGS
         cxx_flags = []
