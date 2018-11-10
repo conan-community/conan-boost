@@ -1,10 +1,12 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+import os
+import sys
 import platform
 
 from conans.client.run_environment import RunEnvironment
 from conans.model.conan_file import ConanFile, tools
 from conans import CMake
-import os
-import sys
 
 
 class DefaultNameConan(ConanFile):
