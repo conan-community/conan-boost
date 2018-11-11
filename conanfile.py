@@ -33,9 +33,10 @@ class BoostConan(ConanFile):
         "magic_autolink": [True, False] # enables BOOST_ALL_NO_LIB
     }
     options.update({"without_%s" % libname: [True, False] for libname in LIB_LIST})
-    default_options = {"shared": False, "header_only": False, "fPIC": True, "skip_lib_rename": False, "magic_autolink": False}
-    default_options.update({"without_%s" % libname: False for libname in LIB_LIST if libname != "python"})
-    default_options["without_python"] = True
+    default_options = ["shared=False", "header_only=False", "fPIC=True", "skip_lib_rename=False", "magic_autolink=False"]
+    default_options.extend(["without_%s=False" % libname for libname in LIB_LIST if libname != "python"])
+    default_options.append("without_python=True")
+    default_options = tuple(default_options)
 
     url = "https://github.com/conan-community/conan-boost"
     homepage = "https://www.boost.org"
