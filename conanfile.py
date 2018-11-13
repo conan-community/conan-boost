@@ -427,8 +427,8 @@ class BoostConan(ConanFile):
                 else:
                     self.output.info("Enabled magic autolinking (smart and magic decisions)")
 
-                # https://github.com/conan-community/conan-boost/issues/127#issuecomment-404750974
-                self.cpp_info.libs.append("bcrypt")
+                # Force linking with required bcrypt
+                self.cpp_info.defines.append("BOOST_UUID_FORCE_AUTO_LINK")
             elif self.settings.os == "Linux":
                 # https://github.com/conan-community/conan-boost/issues/135
                 self.cpp_info.libs.append("pthread")
