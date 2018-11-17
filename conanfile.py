@@ -1,5 +1,7 @@
 from conans import ConanFile
 from conans import tools
+from conans.client.build.cppstd_flags import cppstd_flag
+
 import os
 import sys
 
@@ -136,7 +138,14 @@ class BoostConan(ConanFile):
                 flags.append("--without-%s" % libname)
 
         if self.settings.cppstd:
-            flags.append("cxxstd=%s" % self.settings.cppstd)
+            toolset, _, _ = self.get_toolset_version_and_exe()
+            flags.append("toolset=%s" % toolset)
+            flags.append("cxxflags=%s" % cppstd_flag(
+                    self.settings.get_safe("compiler"),
+                    self.settings.get_safe("compiler.version"),
+                    self.settings.get_safe("cppstd")
+                )
+            )
 
         # CXX FLAGS
         cxx_flags = []
@@ -418,8 +427,8 @@ class BoostConan(ConanFile):
                 else:
                     self.output.info("Enabled magic autolinking (smart and magic decisions)")
 
-                # https://github.com/conan-community/conan-boost/issues/127#issuecomment-404750974
-                self.cpp_info.libs.append("bcrypt")
+                # Force linking with required bcrypt
+                self.cpp_info.defines.append("BOOST_UUID_FORCE_AUTO_LINK")
             elif self.settings.os == "Linux":
                 # https://github.com/conan-community/conan-boost/issues/135
                 self.cpp_info.libs.append("pthread")
