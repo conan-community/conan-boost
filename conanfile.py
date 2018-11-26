@@ -354,6 +354,9 @@ class BoostConan(ConanFile):
         if self.options.without_test:  # remove boost_unit_test_framework
             self.cpp_info.libs = [lib for lib in self.cpp_info.libs if "unit_test" not in lib]
 
+        if self.settings.os == "Linux":
+            self.cpp_info.libs.append("rt")
+
         self.output.info("LIBRARIES: %s" % self.cpp_info.libs)
         self.output.info("Package folder: %s" % self.package_folder)
 
