@@ -205,6 +205,9 @@ class BoostConan(ConanFile):
             if self.options.fPIC:
                 cxx_flags.append("-fPIC")
 
+        if self.settings.compiler == "Visual Studio":
+            flags.append("define=_ENABLE_EXTENDED_ALIGNED_STORAGE=1")
+
         # Standalone toolchain fails when declare the std lib
         if self.settings.os != "Android":
             try:
