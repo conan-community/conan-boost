@@ -1,10 +1,12 @@
+[![Build status](https://ci.appveyor.com/api/projects/status/hlb8joewtth07nmb/branch/release/1.66.0?svg=true)](https://ci.appveyor.com/project/lasote/conan-boost/branch/release/1.66.0)
 
-[![Conan.io Boost package](https://img.shields.io/badge/conan.io-Boost%2F1.64.0-green.svg?logo=data:image/png;base64%2CiVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAMAAAAolt3jAAAA1VBMVEUAAABhlctjlstkl8tlmMtlmMxlmcxmmcxnmsxpnMxpnM1qnc1sn85voM91oM11oc1xotB2oc56pNF6pNJ2ptJ8ptJ8ptN9ptN8p9N5qNJ9p9N9p9R8qtOBqdSAqtOAqtR%2BrNSCrNJ/rdWDrNWCsNWCsNaJs9eLs9iRvNuVvdyVv9yXwd2Zwt6axN6dxt%2Bfx%2BChyeGiyuGjyuCjyuGly%2BGlzOKmzOGozuKoz%2BKqz%2BOq0OOv1OWw1OWw1eWx1eWy1uay1%2Baz1%2Baz1%2Bez2Oe02Oe12ee22ujUGwH3AAAAAXRSTlMAQObYZgAAAAFiS0dEAIgFHUgAAAAJcEhZcwAACxMAAAsTAQCanBgAAAAHdElNRQfgBQkREyOxFIh/AAAAiklEQVQI12NgAAMbOwY4sLZ2NtQ1coVKWNvoc/Eq8XDr2wB5Ig62ekza9vaOqpK2TpoMzOxaFtwqZua2Bm4makIM7OzMAjoaCqYuxooSUqJALjs7o4yVpbowvzSUy87KqSwmxQfnsrPISyFzWeWAXCkpMaBVIC4bmCsOdgiUKwh3JojLgAQ4ZCE0AMm2D29tZwe6AAAAAElFTkSuQmCC)](http://www.conan.io/source/Boost/1.64.0/lasote/stable) [![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/lasote/conan-boost?svg=true&branch=release/1.64)](https://ci.appveyor.com/project/lasote/conan-boost) [![Travis Build Status](https://api.travis-ci.org/lasote/conan-boost.svg?branch=release/1.64.0)](https://travis-ci.org/lasote/conan-boost)
+[![Build Status](https://travis-ci.org/lasote/conan-boost.svg?branch=release%2F1.66.0)](https://travis-ci.org/lasote/conan-boost)
 
 # conan-boost
 
-[Conan.io](https://conan.io) package for Boost library
+Conan package for Boost library
 
+Thanks to @DavidZemon for the huge help with cross-building support!
 
 The packages generated with this **conanfile** can be found on [bintray](https://bintray.com/conan-community).
 
@@ -12,25 +14,62 @@ The packages generated with this **conanfile** can be found on [bintray](https:/
 
 ### Basic setup
 
-    $ conan install Boost/1.64.0@conan/stable
+    $ conan install boost/1.66.0@conan/stable
 
 ### Project setup
 
 If you handle multiple dependencies in your project is better to add a *conanfile.txt*
 
     [requires]
-    Boost/1.64.0@conan/stable
+    boost/1.66.0@conan/stable
 
     [options]
-    Boost:shared=true # false
+    boost:shared=True # False
     # Take a look for all available options in conanfile.py
 
     [generators]
-    txt
     cmake
 
 Complete the installation of requirements for your project running:</small></span>
 
     conan install .
 
-Project setup installs the library (and all his dependencies) and generates the files *conanbuildinfo.txt* and *conanbuildinfo.cmake* with all the paths and variables that you need to link with your dependencies.
+Project setup installs the library (and all his dependencies) and generates the files *conanbuildinfo.txt* and *conanbuildinfo.cmake*
+with all the paths and variables that you need to link with your dependencies.
+
+Follow the Conan getting started: http://docs.conan.io
+
+
+### Cross building
+
+The package works cross compiled to ARM, tested from windows, using the SYSGCC toolchain and the following profile:
+
+    target_host=arm-linux-gnueabihf
+    standalone_toolchain=C:/sysgcc/raspberry
+    cc_compiler=gcc
+    cxx_compiler=g++
+
+    [settings]
+    os=Linux
+    arch=armv7
+    compiler=gcc
+    compiler.version=6
+    compiler.libcxx=libstdc++
+    build_type=Release
+
+    [env]
+    CONAN_CMAKE_FIND_ROOT_PATH=$standalone_toolchain/$target_host/sysroot
+    SYSROOT=$standalone_toolchain/$target_host/sysroot
+    PATH=[$standalone_toolchain/bin]
+    CHOST=$target_host
+    AR=$target_host-ar
+    AS=$target_host-as
+    RANLIB=$target_host-ranlib
+    LD=$target_host-ld
+    STRIP=$target_host-strip
+    CC=$target_host-$cc_compiler
+    CXX=$target_host-$cxx_compiler
+    CXXFLAGS=-I"$standalone_toolchain/$target_host/lib/include"
+
+
+Apply the profile when running "conan install" or "conan create" with ``--profile`` option.

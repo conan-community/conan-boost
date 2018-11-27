@@ -1,4 +1,7 @@
-from conans.model.conan_file import ConanFile
+import platform
+
+from conans.client.run_environment import RunEnvironment
+from conans.model.conan_file import ConanFile, tools
 from conans import CMake
 import os
 import sys
@@ -11,28 +14,29 @@ class DefaultNameConan(ConanFile):
     generators = "cmake"
 
     def configure(self):
-        if self.options["Boost"].header_only:
+        if self.options["boost"].header_only:
             self.settings.clear()
 
     def build(self):
         cmake = CMake(self)
-        if self.options["Boost"].header_only:
+        if self.options["boost"].header_only:
             cmake.definitions["HEADER_ONLY"] = "TRUE"
-        if self.options["Boost"].python:
+        if self.options["boost"].python:
             cmake.definitions["WITH_PYTHON"] = "TRUE"
+
         cmake.configure()
         cmake.build()
 
-    def imports(self):
-        self.copy(pattern="*.dll", dst="bin", src="bin")
-        self.copy(pattern="*.dylib", dst="bin", src="lib")
-        
-    def test(self):        
-        data_file = os.path.join(self.conanfile_directory, "data.txt")
-        self.run("cd bin && .%slambda < %s" % (os.sep, data_file))
-        if not self.options["Boost"].header_only:
-            self.run("cd bin && .%sregex_exe < %s" % (os.sep, data_file))
-            if self.options["Boost"].python:
+    def test(self):
+        bt = self.settings.build_type
+        re = RunEnvironment(self)
+        with tools.environment_append(re.vars):
+            if platform.system() == "Darwin":
+                lpath = os.environ["DYLD_LIBRARY_PATH"]
+                self.run('DYLD_LIBRARY_PATH=%s ctest --output-on-error -C %s' % (lpath, bt))
+            else:
+                self.run('ctest --output-on-error -C %s' % bt)
+            if self.options["boost"].python:
                 os.chdir("bin")
                 sys.path.append(".")
                 import hello_ext
