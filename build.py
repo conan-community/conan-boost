@@ -19,6 +19,10 @@ if __name__ == "__main__":
                 # MinGW shared with linker errors. I don't have a clue
                 if settings["compiler"] == "gcc" and options["boost:shared"] is True:
                     continue
+                if settings["compiler"] == "clang":
+                    settings_libstdcxx11 = settings.copy()
+                    settings_libstdcxx11["compiler.libcxx"] = "libstdc++11"
+                    filtered_builds.append([settings_libstdcxx11, options, env_vars, build_requires])
                 filtered_builds.append([settings, options, env_vars, build_requires])
             builder.builds = filtered_builds
 
