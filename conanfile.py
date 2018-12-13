@@ -18,7 +18,7 @@ lib_list = ['math', 'wave', 'container', 'contract', 'exception', 'graph', 'iost
 
 class BoostConan(ConanFile):
     name = "boost"
-    version = "1.68.0"
+    version = "1.69.0"
     settings = "os", "arch", "compiler", "build_type", "cppstd"
     folder_name = "boost_%s" % version.replace(".", "_")
     description = "Boost provides free peer-reviewed portable C++ source libraries"
@@ -66,10 +66,10 @@ class BoostConan(ConanFile):
 
     def source(self):
         if tools.os_info.is_windows:
-            sha256 = "3b1db0b67079266c40b98329d85916e910bbadfc3db3e860c049056788d4d5cd"
+            sha256 = "d074bcbcc0501c4917b965fc890e303ee70d8b01ff5712bae4a6c54f2b6b4e52"
             extension = ".zip"
         else:
-            sha256 = "da3411ea45622579d419bfda66f45cd0f8c32a181d84adfa936f5688388995cf"
+            sha256 = "9a2c2819310839ea373f42d69e733c339b4e9a19deab6bfec448281554aa4dbb"
             extension = ".tar.gz"
 
         zip_name = "%s%s" % (self.folder_name, extension)
@@ -185,7 +185,7 @@ class BoostConan(ConanFile):
         else:
             flags = []
 
-        # https://www.boost.org/doc/libs/1_68_0/libs/context/doc/html/context/architectures.html
+        # https://www.boost.org/doc/libs/1_69_0/libs/context/doc/html/context/architectures.html
         flags.append("target-os=%s" % self._b2_os)
         flags.append("architecture=%s" % self._b2_architecture)
         flags.append("address-model=%s" % self._b2_address_model)
