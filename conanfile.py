@@ -102,6 +102,7 @@ class BoostConan(ConanFile):
         return {"Windows": "windows",
                 "WindowsStore": "windows",
                 "Linux": "linux",
+                "Android": "android",
                 "Macos": "darwin",
                 "iOS": "iphone",
                 "watchOS": "iphone",
@@ -111,32 +112,23 @@ class BoostConan(ConanFile):
 
     @property
     def _b2_address_model(self):
-        return {"x86": "32",
-                "x86_64": "64",
-                "ppc64le": "64",
-                "ppc64": "64",
-                "armv6": "32",
-                "armv7": "32",
-                "armv7s": "32",
-                "armv7k": "32",
-                "armv8": "64",
-                "mips": "32",
-                "mips64": "64",
-                "sparc": "32",
-                "sparcv9": "64"}.get(str(self.settings.arch))
+        if str(self.settings.arch) in ["x86_64", "ppc64", "ppc64le", "mips64", "armv8", "sparcv9"]:
+            return "64"
+        else:
+            return "32"
 
     @property
     def _b2_binary_format(self):
-        return {"Macos": "mach-o",
+        return {"Windows": "pe",
+                "WindowsStore": "pe",
+                "Linux": "elf",
+                "Android": "elf",
+                "Macos": "mach-o",
                 "iOS": "mach-o",
                 "watchOS": "mach-o",
                 "tvOS": "mach-o",
-                "Linux": "elf",
-                "Android": "elf",
                 "FreeBSD": "elf",
-                "SunOS": "elf",
-                "Windows": "pe",
-                "WindowsStore": "pe"}.get(str(self.settings.os))
+                "SunOS": "elf"}.get(str(self.settings.os))
 
     @property
     def _b2_architecture(self):
@@ -153,12 +145,12 @@ class BoostConan(ConanFile):
         elif str(self.settings.arch).startswith('mips'):
             return 'mips1'
         else:
-            return ""
+            return None
 
     @property
     def _b2_abi(self):
         if str(self.settings.arch).startswith('x86'):
-            return "ms" if self.settings.os == "Windows" else "sysv"
+            return "ms" if str(self.settings.os) in ["Windows", "WindowsStore"] else "sysv"
         elif str(self.settings.arch).startswith('ppc'):
             return "sysv"
         elif str(self.settings.arch).startswith('arm'):
@@ -175,12 +167,17 @@ class BoostConan(ConanFile):
         else:
             flags = []
 
-        # https://www.boost.org/doc/libs/1_68_0/libs/context/doc/html/context/architectures.html
-        flags.append("target-os=%s" % self._b2_os)
-        flags.append("architecture=%s" % self._b2_architecture)
-        flags.append("address-model=%s" % self._b2_address_model)
-        flags.append("binary-format=%s" % self._b2_binary_format)
-        flags.append("abi=%s" % self._b2_abi)
+        # https://www.boost.org/doc/libs/1_64_0/libs/context/doc/html/context/architectures.html
+        if self._b2_os:
+            flags.append("target-os=%s" % self._b2_os)
+        if self._b2_architecture:
+            flags.append("architecture=%s" % self._b2_architecture)
+        if self._b2_address_model:
+            flags.append("address-model=%s" % self._b2_address_model)
+        if self._b2_binary_format:
+            flags.append("binary-format=%s" % self._b2_binary_format)
+        if self._b2_abi:
+            flags.append("abi=%s" % self._b2_abi)
 
         if self.settings.compiler == "gcc":
             flags.append("--layout=system")
