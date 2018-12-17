@@ -238,7 +238,7 @@ class BoostConan(ConanFile):
                 flags.append('-mfloat-abi=hard')
         elif arch in ["x86", "x86_64"]:
             pass
-        elif arch in ["ppc"]:
+        elif arch.startswith("ppc"):
             pass
         else:
             raise Exception("I'm so sorry! I don't know the appropriate ABI for "
