@@ -10,7 +10,7 @@ import sys
 
 
 lib_list = ['math', 'wave', 'container', 'contract', 'exception', 'graph', 'iostreams', 'locale', 'log',
-            'program_options', 'random', 'regex', 'mpi', 'serialization', 'signals',
+            'program_options', 'random', 'regex', 'mpi', 'serialization',
             'coroutine', 'fiber', 'context', 'timer', 'thread', 'chrono', 'date_time',
             'atomic', 'filesystem', 'system', 'graph_parallel', 'python',
             'stacktrace', 'test', 'type_erasure']
