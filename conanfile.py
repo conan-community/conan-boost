@@ -280,6 +280,9 @@ class BoostConan(ConanFile):
             contents += '<cflags>"%s" ' % os.environ["CFLAGS"]
         if "LDFLAGS" in os.environ:
             contents += '<ldflags>"%s" ' % os.environ["LDFLAGS"]
+        if "ASFLAGS" in os.environ:
+            contents += '<asmflags>"%s" ' % os.environ["ASFLAGS"]
+
         contents += " ;"
 
         self.output.warn(contents)
