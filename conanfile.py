@@ -241,23 +241,17 @@ class BoostConan(ConanFile):
             except:
                 pass
 
-        if self.settings.os == "iOS":
-            arch = self.settings.get_safe('arch')
+        if tools.is_apple_os(self.settings.os):
+            if self.settings.get_safe("os.version"):
+                cxx_flags.append(tools.apple_deployment_target_flag(self.settings.os,
+                                                                    self.settings.os.version))
 
+        if self.settings.os == "iOS":
             cxx_flags.append("-DBOOST_AC_USE_PTHREADS")
             cxx_flags.append("-DBOOST_SP_USE_PTHREADS")
             cxx_flags.append("-fvisibility=hidden")
             cxx_flags.append("-fvisibility-inlines-hidden")
             cxx_flags.append("-fembed-bitcode")
-            cxx_flags.extend(["-arch", tools.to_apple_arch(arch)])
-
-            try:
-                cxx_flags.append("-mios-version-min=%s" % self.settings.os.version)
-                self.output.info("iOS deployment target: %s" % self.settings.os.version)
-            except:
-                pass
-
-            flags.append("macosx-version=%s" % self.b2_macosx_version())
 
         cxx_flags = 'cxxflags="%s"' % " ".join(cxx_flags) if cxx_flags else ""
         flags.append(cxx_flags)
@@ -283,11 +277,35 @@ class BoostConan(ConanFile):
 
         return flags
 
+    @property
+    def _ar(self):
+        if "AR" in os.environ:
+            return os.environ["AR"]
+        if tools.is_apple_os(self.settings.os):
+            return tools.XCRun(self.settings).ar
+        return None
+
+    @property
+    def _ranlib(self):
+        if "RANLIB" in os.environ:
+            return os.environ["RANLIB"]
+        if tools.is_apple_os(self.settings.os):
+            return tools.XCRun(self.settings).ranlib
+        return None
+
+    @property
+    def _cxx(self):
+        if "CXX" in os.environ:
+            return os.environ["CXX"]
+        if tools.is_apple_os(self.settings.os):
+            return tools.XCRun(self.settings).cxx
+        return None
+
     def create_user_config_jam(self, folder):
         """To help locating the zlib and bzip2 deps"""
         self.output.warn("Patching user-config.jam")
 
-        compiler_command = os.environ.get('CXX', None)
+        compiler_command = self._cxx
 
         contents = ""
         if self.zip_bzip2_requires_needed:
@@ -305,15 +323,21 @@ class BoostConan(ConanFile):
 
         toolset, version, exe = self.get_toolset_version_and_exe()
         exe = compiler_command or exe  # Prioritize CXX
+
         # Specify here the toolset with the binary if present if don't empty parameter : :
         contents += '\nusing "%s" : "%s" : ' % (toolset, version)
         contents += ' "%s"' % exe.replace("\\", "/")
 
+        if tools.is_apple_os(self.settings.os):
+            contents += " -isysroot %s" % tools.XCRun(self.settings).sdk_path
+            if self.settings.get_safe("arch"):
+                contents += " -arch %s" % tools.to_apple_arch(self.settings.arch)
+
         contents += " : \n"
-        if "AR" in os.environ:
-            contents += '<archiver>"%s" ' % tools.which(os.environ["AR"]).replace("\\", "/")
-        if "RANLIB" in os.environ:
-            contents += '<ranlib>"%s" ' % tools.which(os.environ["RANLIB"]).replace("\\", "/")
+        if self._ar:
+            contents += '<archiver>"%s" ' % tools.which(self._ar).replace("\\", "/")
+        if self._ranlib:
+            contents += '<ranlib>"%s" ' % tools.which(self._ranlib).replace("\\", "/")
         if "CXXFLAGS" in os.environ:
             contents += '<cxxflags>"%s" ' % os.environ["CXXFLAGS"]
         if "CFLAGS" in os.environ:
@@ -322,11 +346,6 @@ class BoostConan(ConanFile):
             contents += '<linkflags>"%s" ' % os.environ["LDFLAGS"]
         if "ASFLAGS" in os.environ:
             contents += '<asmflags>"%s" ' % os.environ["ASFLAGS"]
-
-        if self.settings.os == "iOS":
-            sdk_name = tools.apple_sdk_name(self.settings)
-            contents += '<striper> <root>%s <architecture>%s <target-os>iphone' % (
-                self.bjam_darwin_root(sdk_name), self.bjam_darwin_architecture(sdk_name))
 
         contents += " ;"
 
@@ -355,11 +374,7 @@ class BoostConan(ConanFile):
             # For GCC < v5 and Clang we need to provide the entire version string
             return compiler, compiler_version, ""
         elif self.settings.compiler == "apple-clang":
-            if self.settings.os == "iOS":
-                cc = tools.XCRun(self.settings, tools.apple_sdk_name(self.settings)).cc
-                return "darwin", self.bjam_darwin_toolchain_version(), cc
-            else:
-                return "clang", compiler_version, ""
+            return "clang-darwin", compiler_version, self._cxx
         elif self.settings.compiler == "sun-cc":
             return "sunpro", compiler_version, ""
         else:
@@ -472,7 +487,7 @@ class BoostConan(ConanFile):
                     self.cpp_info.defines.append("BOOST_PYTHON_STATIC_LIB")
 
             if self.settings.compiler == "Visual Studio":
-                if self.options.magic_autolink == False:
+                if not self.options.magic_autolink:
                     # DISABLES AUTO LINKING! NO SMART AND MAGIC DECISIONS THANKS!
                     self.cpp_info.defines.extend(["BOOST_ALL_NO_LIB"])
                     self.output.info("Disabled magic autolinking (smart and magic decisions)")
@@ -486,37 +501,3 @@ class BoostConan(ConanFile):
                 self.cpp_info.libs.append("pthread")
 
         self.env_info.BOOST_ROOT = self.package_folder
-
-    def b2_macosx_version(self):
-        sdk_name = tools.apple_sdk_name(self.settings)
-        if sdk_name == None:
-            raise ValueError("Bad apple SDK name! "
-                + "b2_macosx_version could be called only to build for Macos/iOS")
-
-        sdk_version = self._xcrun_sdk_version(sdk_name)
-
-        return {"macosx": sdk_version,
-                 "iphoneos": "iphone-%s" % sdk_version,
-                 "iphonesimulator": "iphonesim-%s" % sdk_version
-               }.get(sdk_name, "%s-%s" % (sdk_name, sdk_version))
-
-    def bjam_darwin_root(self, sdk_name):
-        return os.path.join(tools.XCRun(self.settings, sdk_name).sdk_platform_path, 'Developer')
-
-    def bjam_darwin_toolchain_version(self):
-        sdk_name = tools.apple_sdk_name(self.settings)
-        if sdk_name == None:
-            raise ValueError("Bad apple SDK name! "
-                + "bjam_darwin_toolchain_version could be called only to build for Macos/iOS")
-
-        sdk_version = self._xcrun_sdk_version(sdk_name)
-
-        return {"macosx": sdk_version}.get(sdk_name, "%s~%s" % (sdk_version, sdk_name))
-
-    def bjam_darwin_architecture(self, sdk_name):
-        return "x86" if sdk_name in ["macosx", "iphonesimulator"] else "arm"
-
-    def _xcrun_sdk_version(self, sdk_name):
-        """returns devault SDK version for specified SDK name which can be returnd
-        by `self.xcrun_sdk_name()`"""
-        return tools.XCRun(self.settings, sdk_name).sdk_version
