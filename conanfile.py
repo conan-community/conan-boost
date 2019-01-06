@@ -1,6 +1,7 @@
 from conans import ConanFile
 from conans import tools
 from conans.client.build.cppstd_flags import cppstd_flag
+from conans.model.version import Version
 
 import os
 import sys
@@ -358,7 +359,7 @@ class BoostConan(ConanFile):
         compiler = str(self.settings.compiler)
         if self.settings.compiler == "Visual Studio":
             cversion = self.settings.compiler.version
-            _msvc_version = "14.1" if cversion == "15" else "%s.0" % cversion
+            _msvc_version = "14.1" if Version(str(cversion)) >= "15" else "%s.0" % cversion
             return "msvc", _msvc_version, ""
         elif compiler == "gcc" and compiler_version[0] >= "5":
             # For GCC >= v5 we only need the major otherwise Boost doesn't find the compiler
@@ -384,7 +385,7 @@ class BoostConan(ConanFile):
     def _get_boostrap_toolset(self):
         if self.settings.os == "Windows" and self.settings.compiler == "Visual Studio":
             comp_ver = self.settings.compiler.version
-            return "vc%s" % ("141" if comp_ver == "15" else comp_ver)
+            return "vc%s" % ("141" if Version(str(comp_ver)) >= "15" else comp_ver)
 
         with_toolset = {"apple-clang": "darwin"}.get(str(self.settings.compiler),
                                                      str(self.settings.compiler))
