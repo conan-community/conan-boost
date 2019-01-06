@@ -5,6 +5,7 @@ from conans.model.version import Version
 
 import os
 import sys
+import shutil
 
 # From from *1 (see below, b2 --show-libraries), also ordered following linkage order
 # see https://github.com/Kitware/CMake/blob/master/Modules/FindBoost.cmake to know the order
@@ -44,7 +45,7 @@ class BoostConan(ConanFile):
     url = "https://github.com/lasote/conan-boost"
     license = "Boost Software License - Version 1.0. http://www.boost.org/LICENSE_1_0.txt"
     short_paths = True
-    no_copy_source = False
+    no_copy_source = True
 
     exports = ['patches/*']
 
@@ -77,6 +78,9 @@ class BoostConan(ConanFile):
         url = "https://dl.bintray.com/boostorg/release/%s/source/%s" % (self.version, zip_name)
         tools.get(url, sha256=sha256)
 
+        tools.patch(base_path=os.path.join(self.source_folder, self.folder_name),
+                    patch_file='patches/python_base_prefix.patch', strip=1)
+
     ##################### BUILDING METHODS ###########################
 
     def build(self):
@@ -84,8 +88,16 @@ class BoostConan(ConanFile):
             self.output.warn("Header only package, skipping build")
             return
 
-        if not self.options.without_python:
-            tools.patch(base_path=os.path.join(self.build_folder, self.folder_name), patch_file='patches/python_base_prefix.patch', strip=1)
+        src = os.path.join(self.source_folder, self.folder_name)
+        clean_dirs = [os.path.join(self.build_folder, "bin.v2"),
+                      os.path.join(self.build_folder, "architecture"),
+                      os.path.join(src, "stage"),
+                      os.path.join(src, "tools", "build", "src", "engine", "bootstrap"),
+                      os.path.join(src, "tools", "build", "src", "engine", "bin.ntx86"),
+                      os.path.join(src, "tools", "build", "src", "engine", "bin.ntx86_64")]
+        for d in clean_dirs:
+            if os.path.isdir(d):
+                shutil.rmtree(d)
 
         b2_exe = self.bootstrap()
         flags = self.get_build_flags()
