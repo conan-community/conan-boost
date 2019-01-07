@@ -7,6 +7,11 @@ import os
 import sys
 import shutil
 
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from io import StringIO
+
 # From from *1 (see below, b2 --show-libraries), also ordered following linkage order
 # see https://github.com/Kitware/CMake/blob/master/Modules/FindBoost.cmake to know the order
 
@@ -31,11 +36,20 @@ class BoostConan(ConanFile):
         "header_only": [True, False],
         "fPIC": [True, False],
         "skip_lib_rename": [True, False],
-        "magic_autolink": [True, False] # enables BOOST_ALL_NO_LIB
+        "magic_autolink": [True, False],  # enables BOOST_ALL_NO_LIB
+        "python_executable": "ANY",  # system default python installation is used, if None
+        "python_version": "ANY"  # major.minor; computed automatically, if None
     }
     options.update({"without_%s" % libname: [True, False] for libname in lib_list})
 
-    default_options = ["shared=False", "header_only=False", "fPIC=True", "skip_lib_rename=False", "magic_autolink=False"]
+    default_options = ["shared=False",
+                       "header_only=False",
+                       "fPIC=True",
+                       "skip_lib_rename=False",
+                       "magic_autolink=False",
+                       "python_executable=None",
+                       "python_version=None"]
+
     default_options.extend(["without_%s=False" % libname for libname in lib_list if libname != "python"])
     default_options.append("without_python=True")
     default_options.append("bzip2:shared=False")
@@ -65,6 +79,13 @@ class BoostConan(ConanFile):
     def package_id(self):
         if self.options.header_only:
             self.info.header_only()
+        else:
+            del self.info.options.python_executable  # PATH to the interpreter is not important, only version matters
+            if self.options.without_python:
+                del self.info.options.python_version
+            else:
+                if self.options.python_version is None:
+                    self.info.options.python_version = self._python_version
 
     def source(self):
         if tools.os_info.is_windows:
@@ -82,6 +103,71 @@ class BoostConan(ConanFile):
                     patch_file='patches/python_base_prefix.patch', strip=1)
 
     ##################### BUILDING METHODS ###########################
+
+    @property
+    def _python_executable(self):
+        exe = self.options.python_executable if self.options.python_executable else sys.executable
+        return str(exe)
+
+    def _run_python_script(self, script):
+        output = StringIO()
+        command = '"%s" -c "%s"' % (self._python_executable, script)
+        self.output.info('running %s' % command)
+        self.run(command=command, output=output)
+        output = output.getvalue().strip()
+        self.output.info(output)
+        return output if output != "None" else None
+
+    def _get_python_path(self, name):
+        # https://docs.python.org/3/library/sysconfig.html
+        # https://docs.python.org/2.7/library/sysconfig.html
+        return self._run_python_script("from __future__ import print_function; "
+                                       "import sysconfig; "
+                                       "print(sysconfig.get_path('%s'))" % name)
+
+    def _get_python_var(self, name):
+        return self._run_python_script("from __future__ import print_function; "
+                                       "import sysconfig; "
+                                       "print(sysconfig.get_config_var('%s'))" % name)
+
+    @property
+    def _python_version(self):
+        version = self._run_python_script("from __future__ import print_function; "
+                                          "import sys; "
+                                          "print('%s.%s' % (sys.version_info[0], sys.version_info[1]))")
+        if self.options.python_version and version != self.options.python_version:
+            raise Exception("detected python version %s doesn't match conan option %s" % (version,
+                                                                                          self.options.python_version))
+        return version
+
+    @property
+    def _python_version_no_dot(self):
+        return self._python_version.replace(".", "")
+
+    @property
+    def _python_includes(self):
+        return self._get_python_path('include')
+
+    @property
+    def _python_libraries(self):
+        library = self._get_python_var("LIBRARY")
+        ldlibrary = self._get_python_var("LDLIBRARY")
+        libdir = self._get_python_var("LIBDIR")
+        if libdir and library and os.path.isfile(os.path.join(libdir, library)):
+            return os.path.join(libdir, library)
+        if libdir and ldlibrary and os.path.isfile(os.path.join(libdir, ldlibrary)):
+            return os.path.join(libdir, ldlibrary)
+        if os.name == "nt":
+            stdlib = self._get_python_path("stdlib")
+            if self.settings.compiler == "Visual Studio":
+                libname = "python" + self._python_version_no_dot + ".lib"
+            elif self.settings.compiler == "gcc":
+                libname = "libpython" + self._python_version_no_dot + ".a"
+            else:
+                raise Exception("don't know how to link python for compiler %s on Windows" % self.settings.compiler)
+            libname = os.path.join(os.path.dirname(stdlib), "libs", libname)
+            return libname
+        raise Exception("couldn't locate python libraries - make sure you have installed python development files")
 
     def build(self):
         if self.options.header_only:
@@ -332,7 +418,13 @@ class BoostConan(ConanFile):
                 self.deps_cpp_info["bzip2"].lib_paths[0].replace('\\', '/'),
                 self.deps_cpp_info["bzip2"].libs[0])
 
-        contents += "\nusing python : {} : \"{}\" ;".format(sys.version[:3], sys.executable.replace('\\', '/'))
+        if not self.options.without_python:
+            # https://www.boost.org/doc/libs/1_69_0/libs/python/doc/html/building/configuring_boost_build.html
+            contents += "\nusing python : {version} : {executable} : {includes} :  {libraries} ;"\
+                .format(version=self._python_version,
+                        executable=self._python_executable.replace('\\', '/'),
+                        includes=self._python_includes.replace('\\', '/'),
+                        libraries=self._python_libraries.replace('\\', '/'))
 
         toolset, version, exe = self.get_toolset_version_and_exe()
         exe = compiler_command or exe  # Prioritize CXX
