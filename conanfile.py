@@ -50,7 +50,7 @@ class BoostConan(ConanFile):
     exports = ['patches/*']
 
     def config_options(self):
-        if self.settings.compiler == "Visual Studio":
+        if self.settings.os == "Windows":
             self.options.remove("fPIC")
 
     @property
@@ -234,7 +234,7 @@ class BoostConan(ConanFile):
         # CXX FLAGS
         cxx_flags = []
         # fPIC DEFINITION
-        if self.settings.compiler != "Visual Studio":
+        if self.settings.os != "Windows":
             if self.options.fPIC:
                 cxx_flags.append("-fPIC")
 
