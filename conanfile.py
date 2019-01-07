@@ -85,8 +85,7 @@ class BoostConan(ConanFile):
             if self.options.without_python:
                 del self.info.options.python_version
             else:
-                if self.options.python_version is None:
-                    self.info.options.python_version = self._python_version
+                self.info.options.python_version = self._python_version
 
     def source(self):
         if tools.os_info.is_windows:
