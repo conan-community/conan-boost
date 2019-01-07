@@ -2,6 +2,7 @@ from conans import ConanFile
 from conans import tools
 from conans.client.build.cppstd_flags import cppstd_flag
 from conans.model.version import Version
+from conans.errors import ConanException
 
 import os
 import sys
@@ -113,7 +114,11 @@ class BoostConan(ConanFile):
         output = StringIO()
         command = '"%s" -c "%s"' % (self._python_executable, script)
         self.output.info('running %s' % command)
-        self.run(command=command, output=output)
+        try:
+            self.run(command=command, output=output)
+        except ConanException:
+            self.output.info("(failed)")
+            return None
         output = output.getvalue().strip()
         self.output.info(output)
         return output if output != "None" else None
@@ -125,10 +130,18 @@ class BoostConan(ConanFile):
                                        "import sysconfig; "
                                        "print(sysconfig.get_path('%s'))" % name)
 
-    def _get_python_var(self, name):
+    def _get_python_sc_var(self, name):
         return self._run_python_script("from __future__ import print_function; "
                                        "import sysconfig; "
                                        "print(sysconfig.get_config_var('%s'))" % name)
+
+    def _get_python_du_var(self, name):
+        return self._run_python_script("from __future__ import print_function; "
+                                       "import distutils.sysconfig as du_sysconfig; "
+                                       "print(du_sysconfig.get_config_var('%s'))" % name)
+
+    def _get_python_var(self, name):
+        return self._get_python_sc_var(name) or self._get_python_du_var(name)
 
     @property
     def _python_version(self):
@@ -141,32 +154,80 @@ class BoostConan(ConanFile):
         return version
 
     @property
-    def _python_version_no_dot(self):
-        return self._python_version.replace(".", "")
+    def _python_inc(self):
+        return self._run_python_script("from __future__ import print_function; "
+                                       "import sysconfig; "
+                                       "print(sysconfig.get_python_inc())")
+
+    @property
+    def _python_abiflags(self):
+        return self._run_python_script("from __future__ import print_function; "
+                                       "import sys; "
+                                       "print(getattr(sys, 'abiflags', ''))")
 
     @property
     def _python_includes(self):
-        return self._get_python_path('include')
+        include = self._get_python_path('include')
+        plat_include = self._get_python_path('platinclude')
+        include_py = self._get_python_var('INCLUDEPY')
+        include_dir = self._get_python_var('INCLUDEDIR')
+        python_inc = self._python_inc
+
+        candidates = [include,
+                      plat_include,
+                      include_py,
+                      include_dir,
+                      python_inc]
+        for candidate in candidates:
+            if candidate:
+                python_h = os.path.join(candidate, 'Python.h')
+                self.output.info('checking %s' % python_h)
+                if os.path.isfile(python_h):
+                    self.output.info('found Python.h: %s' % python_h)
+                    return candidate
+        raise Exception("couldn't locate Python.h - make sure you have installed python development files")
+
 
     @property
     def _python_libraries(self):
         library = self._get_python_var("LIBRARY")
         ldlibrary = self._get_python_var("LDLIBRARY")
         libdir = self._get_python_var("LIBDIR")
-        if libdir and library and os.path.isfile(os.path.join(libdir, library)):
-            return os.path.join(libdir, library)
-        if libdir and ldlibrary and os.path.isfile(os.path.join(libdir, ldlibrary)):
-            return os.path.join(libdir, ldlibrary)
-        if os.name == "nt":
-            stdlib = self._get_python_path("stdlib")
-            if self.settings.compiler == "Visual Studio":
-                libname = "python" + self._python_version_no_dot + ".lib"
-            elif self.settings.compiler == "gcc":
-                libname = "libpython" + self._python_version_no_dot + ".a"
-            else:
-                raise Exception("don't know how to link python for compiler %s on Windows" % self.settings.compiler)
-            libname = os.path.join(os.path.dirname(stdlib), "libs", libname)
-            return libname
+        multiarch = self._get_python_var("MULTIARCH")
+        masd = self._get_python_var("multiarchsubdir")
+        with_dyld = self._get_python_var("WITH_DYLD")
+        if libdir and multiarch and masd:
+            if masd.startswith(os.sep):
+                masd = masd[len(os.sep):]
+            libdir = os.path.join(libdir, masd)
+
+        if not libdir:
+            libdest = self._get_python_var("LIBDEST")
+            libdir = os.path.join(os.path.dirname(libdest), "libs")
+
+        candidates = [ldlibrary, library]
+        library_prefixes = [""] if self.settings.compiler == "Visual Studio" else ["", "lib"]
+        library_suffixes = [".lib"] if self.settings.compiler == "Visual Studio" else [".so", ".a"]
+        if with_dyld:
+            library_suffixes.insert(0, ".dylib")
+
+        python_version = self._python_version
+        python_version_no_dot = python_version.replace(".", "")
+        versions = ["", python_version, python_version_no_dot]
+        abiflags = self._python_abiflags
+
+        for prefix in library_prefixes:
+            for suffix in library_suffixes:
+                for version in versions:
+                    candidates.append("%spython%s%s%s" % (prefix, version, abiflags, suffix))
+
+        for candidate in candidates:
+            if candidate:
+                python_lib = os.path.join(libdir, candidate)
+                self.output.info('checking %s' % python_lib)
+                if os.path.isfile(python_lib):
+                    self.output.info('found python library: %s' % python_lib)
+                    return python_lib
         raise Exception("couldn't locate python libraries - make sure you have installed python development files")
 
     def build(self):
