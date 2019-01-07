@@ -74,7 +74,7 @@ class BoostConan(ConanFile):
         if 'gcc' == self.settings.compiler and Version(str(self.settings.compiler)) < '6':
             # https://svn.boost.org/trac10/ticket/13368
             tools.replace_in_file(
-                file_path='%s/boost/asio/detail/consuming_buffers.hpp'%self.folder_name,
+                file_path='%s/boost/asio/detail/consuming_buffers.hpp' % self.folder_name,
                 search='&& result.count <',
                 replace='&& (result.count) <'
             )
