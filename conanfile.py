@@ -207,7 +207,7 @@ class BoostConan(ConanFile):
 
         candidates = [ldlibrary, library]
         library_prefixes = [""] if self.settings.compiler == "Visual Studio" else ["", "lib"]
-        library_suffixes = [".lib"] if self.settings.compiler == "Visual Studio" else [".so", ".a"]
+        library_suffixes = [".lib"] if self.settings.compiler == "Visual Studio" else [".so", ".dll.a", ".a"]
         if with_dyld:
             library_suffixes.insert(0, ".dylib")
 
