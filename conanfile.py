@@ -388,6 +388,10 @@ class BoostConan(ConanFile):
 
         with_toolset = {"apple-clang": "darwin"}.get(str(self.settings.compiler),
                                                      str(self.settings.compiler))
+
+        # fallback for the case when no unversioned gcc/clang is available
+        if with_toolset in ["gcc", "clang"] and not tools.which(with_toolset):
+            with_toolset = "cc"
         return with_toolset
 
     def bootstrap(self):
