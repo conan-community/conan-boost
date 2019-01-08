@@ -1,5 +1,6 @@
 from conans import ConanFile
 from conans import tools
+from conans.model.version import Version
 import os
 
 # From from *1 (see below, b2 --show-libraries), also ordered following linkage order
@@ -69,6 +70,14 @@ class BoostConan(ConanFile):
         zip_name = "%s%s" % (self.folder_name, extension)
         url = "https://dl.bintray.com/boostorg/release/%s/source/%s" % (self.version, zip_name)
         tools.get(url, sha256=sha256)
+
+        if 'gcc' == self.settings.compiler and Version(str(self.settings.compiler)) < '6':
+            # https://svn.boost.org/trac10/ticket/13368
+            tools.replace_in_file(
+                file_path='%s/boost/asio/detail/consuming_buffers.hpp' % self.folder_name,
+                search='&& result.count <',
+                replace='&& (result.count) <'
+            )
 
     ##################### BUILDING METHODS ###########################
 
