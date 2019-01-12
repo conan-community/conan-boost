@@ -106,10 +106,19 @@ class BoostConan(ConanFile):
 
     @property
     def _python_executable(self):
+        """
+        obtain full path to the python interpreter executable
+        :return: path to the python interpreter executable, either set by option, or system default
+        """
         exe = self.options.python_executable if self.options.python_executable else sys.executable
         return str(exe).replace('\\', '/')
 
     def _run_python_script(self, script):
+        """
+        execute python one-liner script and return its output
+        :param script: string containing python script to be executed
+        :return: output of the python script execution, or None, if script has failed
+        """
         output = StringIO()
         command = '"%s" -c "%s"' % (self._python_executable, script)
         self.output.info('running %s' % command)
@@ -123,6 +132,11 @@ class BoostConan(ConanFile):
         return output if output != "None" else None
 
     def _get_python_path(self, name):
+        """
+        obtain path entry for the python installation
+        :param name: name of the python config entry for path to be queried (such as "include", "platinclude", etc.)
+        :return: path entry from the sysconfig
+        """
         # https://docs.python.org/3/library/sysconfig.html
         # https://docs.python.org/2.7/library/sysconfig.html
         return self._run_python_script("from __future__ import print_function; "
@@ -130,20 +144,40 @@ class BoostConan(ConanFile):
                                        "print(sysconfig.get_path('%s'))" % name)
 
     def _get_python_sc_var(self, name):
+        """
+        obtain value of python sysconfig variable
+        :param name: name of variable to be queried (such as LIBRARY or LDLIBRARY)
+        :return: value of python sysconfig variable
+        """
         return self._run_python_script("from __future__ import print_function; "
                                        "import sysconfig; "
                                        "print(sysconfig.get_config_var('%s'))" % name)
 
     def _get_python_du_var(self, name):
+        """
+        obtain value of python distutils sysconfig variable
+        (sometimes sysconfig returns empty values, while python.sysconfig provides correct values)
+        :param name: name of variable to be queried (such as LIBRARY or LDLIBRARY)
+        :return: value of python sysconfig variable
+        """
         return self._run_python_script("from __future__ import print_function; "
                                        "import distutils.sysconfig as du_sysconfig; "
                                        "print(du_sysconfig.get_config_var('%s'))" % name)
 
     def _get_python_var(self, name):
+        """
+        obtain value of python variable, either by sysconfig, or by distutils.sysconfig
+        :param name: name of variable to be queried (such as LIBRARY or LDLIBRARY)
+        :return: value of python sysconfig variable
+        """
         return self._get_python_sc_var(name) or self._get_python_du_var(name)
 
     @property
     def _python_version(self):
+        """
+        obtain version of python interpreter
+        :return: python interpreter version, in format major.minor
+        """
         version = self._run_python_script("from __future__ import print_function; "
                                           "import sys; "
                                           "print('%s.%s' % (sys.version_info[0], sys.version_info[1]))")
@@ -154,18 +188,30 @@ class BoostConan(ConanFile):
 
     @property
     def _python_inc(self):
+        """
+        obtain the result of the "sysconfig.get_python_inc()" call
+        :return: result of the "sysconfig.get_python_inc()" execution
+        """
         return self._run_python_script("from __future__ import print_function; "
                                        "import sysconfig; "
                                        "print(sysconfig.get_python_inc())")
 
     @property
     def _python_abiflags(self):
+        """
+        obtain python ABI flags, see https://www.python.org/dev/peps/pep-3149/ for the details
+        :return: the value of python ABI flags
+        """
         return self._run_python_script("from __future__ import print_function; "
                                        "import sys; "
                                        "print(getattr(sys, 'abiflags', ''))")
 
     @property
     def _python_includes(self):
+        """
+        attempt to find directory containing Python.h header file
+        :return: the directory with python includes
+        """
         include = self._get_python_path('include')
         plat_include = self._get_python_path('platinclude')
         include_py = self._get_python_var('INCLUDEPY')
@@ -186,9 +232,12 @@ class BoostConan(ConanFile):
                     return candidate.replace('\\', '/')
         raise Exception("couldn't locate Python.h - make sure you have installed python development files")
 
-
     @property
     def _python_libraries(self):
+        """
+        attempt to find python development library
+        :return: the full path to the python library to be linked with
+        """
         library = self._get_python_var("LIBRARY")
         ldlibrary = self._get_python_var("LDLIBRARY")
         libdir = self._get_python_var("LIBDIR")
