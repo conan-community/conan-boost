@@ -107,7 +107,7 @@ class BoostConan(ConanFile):
     @property
     def _python_executable(self):
         exe = self.options.python_executable if self.options.python_executable else sys.executable
-        return str(exe)
+        return str(exe).replace('\\', '/')
 
     def _run_python_script(self, script):
         output = StringIO()
@@ -183,7 +183,7 @@ class BoostConan(ConanFile):
                 self.output.info('checking %s' % python_h)
                 if os.path.isfile(python_h):
                     self.output.info('found Python.h: %s' % python_h)
-                    return candidate
+                    return candidate.replace('\\', '/')
         raise Exception("couldn't locate Python.h - make sure you have installed python development files")
 
 
@@ -226,7 +226,7 @@ class BoostConan(ConanFile):
                 self.output.info('checking %s' % python_lib)
                 if os.path.isfile(python_lib):
                     self.output.info('found python library: %s' % python_lib)
-                    return python_lib
+                    return python_lib.replace('\\', '/')
         raise Exception("couldn't locate python libraries - make sure you have installed python development files")
 
     def build(self):
@@ -482,9 +482,9 @@ class BoostConan(ConanFile):
             # https://www.boost.org/doc/libs/1_69_0/libs/python/doc/html/building/configuring_boost_build.html
             contents += "\nusing python : {version} : {executable} : {includes} :  {libraries} ;"\
                 .format(version=self._python_version,
-                        executable=self._python_executable.replace('\\', '/'),
-                        includes=self._python_includes.replace('\\', '/'),
-                        libraries=self._python_libraries.replace('\\', '/'))
+                        executable=self._python_executable,
+                        includes=self._python_includes,
+                        libraries=self._python_libraries)
 
         toolset, version, exe = self.get_toolset_version_and_exe()
         exe = compiler_command or exe  # Prioritize CXX
