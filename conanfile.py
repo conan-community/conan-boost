@@ -2,10 +2,16 @@ from conans import ConanFile
 from conans import tools
 from conans.client.build.cppstd_flags import cppstd_flag
 from conans.model.version import Version
+from conans.errors import ConanException
 
 import os
 import sys
 import shutil
+
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 # From from *1 (see below, b2 --show-libraries), also ordered following linkage order
 # see https://github.com/Kitware/CMake/blob/master/Modules/FindBoost.cmake to know the order
@@ -31,11 +37,20 @@ class BoostConan(ConanFile):
         "header_only": [True, False],
         "fPIC": [True, False],
         "skip_lib_rename": [True, False],
-        "magic_autolink": [True, False] # enables BOOST_ALL_NO_LIB
+        "magic_autolink": [True, False],  # enables BOOST_ALL_NO_LIB
+        "python_executable": "ANY",  # system default python installation is used, if None
+        "python_version": "ANY"  # major.minor; computed automatically, if None
     }
     options.update({"without_%s" % libname: [True, False] for libname in lib_list})
 
-    default_options = ["shared=False", "header_only=False", "fPIC=True", "skip_lib_rename=False", "magic_autolink=False"]
+    default_options = ["shared=False",
+                       "header_only=False",
+                       "fPIC=True",
+                       "skip_lib_rename=False",
+                       "magic_autolink=False",
+                       "python_executable=None",
+                       "python_version=None"]
+
     default_options.extend(["without_%s=False" % libname for libname in lib_list if libname != "python"])
     default_options.append("without_python=True")
     default_options.append("bzip2:shared=False")
@@ -50,7 +65,7 @@ class BoostConan(ConanFile):
     exports = ['patches/*']
 
     def config_options(self):
-        if self.settings.compiler == "Visual Studio":
+        if self.settings.os == "Windows":
             self.options.remove("fPIC")
 
     @property
@@ -65,6 +80,12 @@ class BoostConan(ConanFile):
     def package_id(self):
         if self.options.header_only:
             self.info.header_only()
+        else:
+            del self.info.options.python_executable  # PATH to the interpreter is not important, only version matters
+            if self.options.without_python:
+                del self.info.options.python_version
+            else:
+                self.info.options.python_version = self._python_version
 
     def source(self):
         if tools.os_info.is_windows:
@@ -82,6 +103,180 @@ class BoostConan(ConanFile):
                     patch_file='patches/python_base_prefix.patch', strip=1)
 
     ##################### BUILDING METHODS ###########################
+
+    @property
+    def _python_executable(self):
+        """
+        obtain full path to the python interpreter executable
+        :return: path to the python interpreter executable, either set by option, or system default
+        """
+        exe = self.options.python_executable if self.options.python_executable else sys.executable
+        return str(exe).replace('\\', '/')
+
+    def _run_python_script(self, script):
+        """
+        execute python one-liner script and return its output
+        :param script: string containing python script to be executed
+        :return: output of the python script execution, or None, if script has failed
+        """
+        output = StringIO()
+        command = '"%s" -c "%s"' % (self._python_executable, script)
+        self.output.info('running %s' % command)
+        try:
+            self.run(command=command, output=output)
+        except ConanException:
+            self.output.info("(failed)")
+            return None
+        output = output.getvalue().strip()
+        self.output.info(output)
+        return output if output != "None" else None
+
+    def _get_python_path(self, name):
+        """
+        obtain path entry for the python installation
+        :param name: name of the python config entry for path to be queried (such as "include", "platinclude", etc.)
+        :return: path entry from the sysconfig
+        """
+        # https://docs.python.org/3/library/sysconfig.html
+        # https://docs.python.org/2.7/library/sysconfig.html
+        return self._run_python_script("from __future__ import print_function; "
+                                       "import sysconfig; "
+                                       "print(sysconfig.get_path('%s'))" % name)
+
+    def _get_python_sc_var(self, name):
+        """
+        obtain value of python sysconfig variable
+        :param name: name of variable to be queried (such as LIBRARY or LDLIBRARY)
+        :return: value of python sysconfig variable
+        """
+        return self._run_python_script("from __future__ import print_function; "
+                                       "import sysconfig; "
+                                       "print(sysconfig.get_config_var('%s'))" % name)
+
+    def _get_python_du_var(self, name):
+        """
+        obtain value of python distutils sysconfig variable
+        (sometimes sysconfig returns empty values, while python.sysconfig provides correct values)
+        :param name: name of variable to be queried (such as LIBRARY or LDLIBRARY)
+        :return: value of python sysconfig variable
+        """
+        return self._run_python_script("from __future__ import print_function; "
+                                       "import distutils.sysconfig as du_sysconfig; "
+                                       "print(du_sysconfig.get_config_var('%s'))" % name)
+
+    def _get_python_var(self, name):
+        """
+        obtain value of python variable, either by sysconfig, or by distutils.sysconfig
+        :param name: name of variable to be queried (such as LIBRARY or LDLIBRARY)
+        :return: value of python sysconfig variable
+        """
+        return self._get_python_sc_var(name) or self._get_python_du_var(name)
+
+    @property
+    def _python_version(self):
+        """
+        obtain version of python interpreter
+        :return: python interpreter version, in format major.minor
+        """
+        version = self._run_python_script("from __future__ import print_function; "
+                                          "import sys; "
+                                          "print('%s.%s' % (sys.version_info[0], sys.version_info[1]))")
+        if self.options.python_version and version != self.options.python_version:
+            raise Exception("detected python version %s doesn't match conan option %s" % (version,
+                                                                                          self.options.python_version))
+        return version
+
+    @property
+    def _python_inc(self):
+        """
+        obtain the result of the "sysconfig.get_python_inc()" call
+        :return: result of the "sysconfig.get_python_inc()" execution
+        """
+        return self._run_python_script("from __future__ import print_function; "
+                                       "import sysconfig; "
+                                       "print(sysconfig.get_python_inc())")
+
+    @property
+    def _python_abiflags(self):
+        """
+        obtain python ABI flags, see https://www.python.org/dev/peps/pep-3149/ for the details
+        :return: the value of python ABI flags
+        """
+        return self._run_python_script("from __future__ import print_function; "
+                                       "import sys; "
+                                       "print(getattr(sys, 'abiflags', ''))")
+
+    @property
+    def _python_includes(self):
+        """
+        attempt to find directory containing Python.h header file
+        :return: the directory with python includes
+        """
+        include = self._get_python_path('include')
+        plat_include = self._get_python_path('platinclude')
+        include_py = self._get_python_var('INCLUDEPY')
+        include_dir = self._get_python_var('INCLUDEDIR')
+        python_inc = self._python_inc
+
+        candidates = [include,
+                      plat_include,
+                      include_py,
+                      include_dir,
+                      python_inc]
+        for candidate in candidates:
+            if candidate:
+                python_h = os.path.join(candidate, 'Python.h')
+                self.output.info('checking %s' % python_h)
+                if os.path.isfile(python_h):
+                    self.output.info('found Python.h: %s' % python_h)
+                    return candidate.replace('\\', '/')
+        raise Exception("couldn't locate Python.h - make sure you have installed python development files")
+
+    @property
+    def _python_libraries(self):
+        """
+        attempt to find python development library
+        :return: the full path to the python library to be linked with
+        """
+        library = self._get_python_var("LIBRARY")
+        ldlibrary = self._get_python_var("LDLIBRARY")
+        libdir = self._get_python_var("LIBDIR")
+        multiarch = self._get_python_var("MULTIARCH")
+        masd = self._get_python_var("multiarchsubdir")
+        with_dyld = self._get_python_var("WITH_DYLD")
+        if libdir and multiarch and masd:
+            if masd.startswith(os.sep):
+                masd = masd[len(os.sep):]
+            libdir = os.path.join(libdir, masd)
+
+        if not libdir:
+            libdest = self._get_python_var("LIBDEST")
+            libdir = os.path.join(os.path.dirname(libdest), "libs")
+
+        candidates = [ldlibrary, library]
+        library_prefixes = [""] if self.settings.compiler == "Visual Studio" else ["", "lib"]
+        library_suffixes = [".lib"] if self.settings.compiler == "Visual Studio" else [".so", ".dll.a", ".a"]
+        if with_dyld:
+            library_suffixes.insert(0, ".dylib")
+
+        python_version = self._python_version
+        python_version_no_dot = python_version.replace(".", "")
+        versions = ["", python_version, python_version_no_dot]
+        abiflags = self._python_abiflags
+
+        for prefix in library_prefixes:
+            for suffix in library_suffixes:
+                for version in versions:
+                    candidates.append("%spython%s%s%s" % (prefix, version, abiflags, suffix))
+
+        for candidate in candidates:
+            if candidate:
+                python_lib = os.path.join(libdir, candidate)
+                self.output.info('checking %s' % python_lib)
+                if os.path.isfile(python_lib):
+                    self.output.info('found python library: %s' % python_lib)
+                    return python_lib.replace('\\', '/')
+        raise Exception("couldn't locate python libraries - make sure you have installed python development files")
 
     def build(self):
         if self.options.header_only:
@@ -234,7 +429,7 @@ class BoostConan(ConanFile):
         # CXX FLAGS
         cxx_flags = []
         # fPIC DEFINITION
-        if self.settings.compiler != "Visual Studio":
+        if self.settings.os != "Windows":
             if self.options.fPIC:
                 cxx_flags.append("-fPIC")
 
@@ -332,7 +527,13 @@ class BoostConan(ConanFile):
                 self.deps_cpp_info["bzip2"].lib_paths[0].replace('\\', '/'),
                 self.deps_cpp_info["bzip2"].libs[0])
 
-        contents += "\nusing python : {} : \"{}\" ;".format(sys.version[:3], sys.executable.replace('\\', '/'))
+        if not self.options.without_python:
+            # https://www.boost.org/doc/libs/1_69_0/libs/python/doc/html/building/configuring_boost_build.html
+            contents += "\nusing python : {version} : {executable} : {includes} :  {libraries} ;"\
+                .format(version=self._python_version,
+                        executable=self._python_executable,
+                        includes=self._python_includes,
+                        libraries=self._python_libraries)
 
         toolset, version, exe = self.get_toolset_version_and_exe()
         exe = compiler_command or exe  # Prioritize CXX
