@@ -36,7 +36,7 @@ class BoostConan(ConanFile):
         "shared": [True, False],
         "header_only": [True, False],
         "fPIC": [True, False],
-        "skip_lib_rename": [True, False],
+        "layout": ["system", "versioned", "tagged"],
         "magic_autolink": [True, False],  # enables BOOST_ALL_NO_LIB
         "python_executable": "ANY",  # system default python installation is used, if None
         "python_version": "ANY"  # major.minor; computed automatically, if None
@@ -46,7 +46,7 @@ class BoostConan(ConanFile):
     default_options = ["shared=False",
                        "header_only=False",
                        "fPIC=True",
-                       "skip_lib_rename=False",
+                       "layout=system",
                        "magic_autolink=False",
                        "python_executable=None",
                        "python_version=None"]
@@ -397,8 +397,7 @@ class BoostConan(ConanFile):
         if self._b2_abi:
             flags.append("abi=%s" % self._b2_abi)
 
-        if self.settings.compiler == "gcc":
-            flags.append("--layout=system")
+        flags.append("--layout=%s" % self.options.layout)
 
         if self.settings.compiler == "Visual Studio" and self.settings.compiler.runtime:
             flags.append("runtime-link=%s" % ("static" if "MT" in str(self.settings.compiler.runtime) else "shared"))
@@ -645,26 +644,6 @@ class BoostConan(ConanFile):
         if not os.path.exists(os.path.join(self.package_folder, "lib")):
             return
 
-        self.renames_to_make_cmake_find_package_happy()
-
-    def renames_to_make_cmake_find_package_happy(self):
-        if not self.options.skip_lib_rename:
-            # CMake findPackage help
-            renames = []
-            for libname in os.listdir(os.path.join(self.package_folder, "lib")):
-                new_name = libname
-                libpath = os.path.join(self.package_folder, "lib", libname)
-                if "-" in libname:
-                    new_name = libname.split("-", 1)[0] + "." + libname.split(".")[-1]
-                    if new_name.startswith("lib"):
-                        new_name = new_name[3:]
-                renames.append([libpath, os.path.join(self.package_folder, "lib", new_name)])
-
-            for original, new in renames:
-                if original != new and not os.path.exists(new):
-                    self.output.info("Rename: %s => %s" % (original, new))
-                    os.rename(original, new)
-
     def package_info(self):
         gen_libs = tools.collect_libs(self)
 
@@ -707,9 +686,13 @@ class BoostConan(ConanFile):
             if self.settings.compiler == "Visual Studio":
                 if not self.options.magic_autolink:
                     # DISABLES AUTO LINKING! NO SMART AND MAGIC DECISIONS THANKS!
-                    self.cpp_info.defines.extend(["BOOST_ALL_NO_LIB"])
+                    self.cpp_info.defines.append("BOOST_ALL_NO_LIB")
                     self.output.info("Disabled magic autolinking (smart and magic decisions)")
                 else:
+                    if self.options.layout == "system":
+                        self.cpp_info.defines.append("BOOST_AUTO_LINK_SYSTEM")
+                    elif self.options.layout == "tagged":
+                        self.cpp_info.defines.append("BOOST_AUTO_LINK_TAGGED")
                     self.output.info("Enabled magic autolinking (smart and magic decisions)")
 
                 # https://github.com/conan-community/conan-boost/issues/127#issuecomment-404750974
