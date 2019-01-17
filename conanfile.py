@@ -403,8 +403,7 @@ class BoostConan(ConanFile):
         if self.settings.compiler == "Visual Studio" and self.settings.compiler.runtime:
             flags.append("runtime-link=%s" % ("static" if "MT" in str(self.settings.compiler.runtime) else "shared"))
 
-        if self.settings.os == "Windows" and self.settings.compiler == "gcc":
-            flags.append("threading=multi")
+        flags.append("threading=multi")
 
         flags.append("link=%s" % ("static" if not self.options.shared else "shared"))
         if self.settings.build_type == "Debug":
