@@ -17,7 +17,7 @@ except ImportError:
 # see https://github.com/Kitware/CMake/blob/master/Modules/FindBoost.cmake to know the order
 
 
-lib_list = ['math', 'wave', 'container', 'contract', 'exception', 'graph', 'iostreams', 'locale', 'log',
+lib_list = ['math', 'wave', 'container', 'exception', 'graph', 'iostreams', 'locale', 'log',
             'program_options', 'random', 'regex', 'mpi', 'serialization',
             'coroutine', 'fiber', 'context', 'timer', 'thread', 'chrono', 'date_time',
             'atomic', 'filesystem', 'system', 'graph_parallel', 'python',
@@ -26,7 +26,7 @@ lib_list = ['math', 'wave', 'container', 'contract', 'exception', 'graph', 'iost
 
 class BoostConan(ConanFile):
     name = "boost"
-    version = "1.69.0"
+    version = "1.65.1"
     settings = "os", "arch", "compiler", "build_type", "cppstd"
     folder_name = "boost_%s" % version.replace(".", "_")
     description = "Boost provides free peer-reviewed portable C++ source libraries"
@@ -89,18 +89,18 @@ class BoostConan(ConanFile):
 
     def source(self):
         if tools.os_info.is_windows:
-            sha256 = "d074bcbcc0501c4917b965fc890e303ee70d8b01ff5712bae4a6c54f2b6b4e52"
+            sha256 = "d1775aef807bd6a14077b450cce2950d8eacd86aaf51015f79e712917f8cc3c2"
             extension = ".zip"
         else:
-            sha256 = "9a2c2819310839ea373f42d69e733c339b4e9a19deab6bfec448281554aa4dbb"
+            sha256 = "a13de2c8fbad635e6ba9c8f8714a0e6b4264b60a29b964b940a22554705b6b60"
             extension = ".tar.gz"
 
         zip_name = "%s%s" % (self.folder_name, extension)
         url = "https://dl.bintray.com/boostorg/release/%s/source/%s" % (self.version, zip_name)
         tools.get(url, sha256=sha256)
 
-        tools.patch(base_path=os.path.join(self.source_folder, self.folder_name),
-                    patch_file='patches/python_base_prefix.patch', strip=1)
+        #tools.patch(base_path=os.path.join(self.source_folder, self.folder_name),
+        #            patch_file='patches/python_base_prefix.patch', strip=1)
 
     ##################### BUILDING METHODS ###########################
 
