@@ -1,6 +1,6 @@
-[![Build status](https://ci.appveyor.com/api/projects/status/hlb8joewtth07nmb/branch/release/1.69.0?svg=true)](https://ci.appveyor.com/project/lasote/conan-boost/branch/release/1.69.0)
+[![Build status](https://ci.appveyor.com/api/projects/status/hlb8joewtth07nmb/branch/release/1.65.1?svg=true)](https://ci.appveyor.com/project/lasote/conan-boost/branch/release/1.65.1)
 
-[![Build Status](https://travis-ci.org/lasote/conan-boost.svg?branch=release%2F1.69.0)](https://travis-ci.org/lasote/conan-boost)
+[![Build Status](https://travis-ci.org/lasote/conan-boost.svg?branch=release%2F1.65.1)](https://travis-ci.org/lasote/conan-boost)
 
 # conan-boost
 
@@ -14,14 +14,14 @@ The packages generated with this **conanfile** can be found on [bintray](https:/
 
 ### Basic setup
 
-    $ conan install boost/1.69.0@conan/stable
+    $ conan install boost/1.65.1@conan/stable
 
 ### Project setup
 
 If you handle multiple dependencies in your project is better to add a *conanfile.txt*
 
     [requires]
-    boost/1.69.0@conan/stable
+    boost/1.65.1@conan/stable
 
     [options]
     boost:shared=True # False
