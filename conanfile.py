@@ -385,7 +385,7 @@ class BoostConan(ConanFile):
         else:
             flags = []
 
-        # https://www.boost.org/doc/libs/1_69_0/libs/context/doc/html/context/architectures.html
+        # https://www.boost.org/doc/libs/1_65_1/libs/context/doc/html/context/architectures.html
         if self._b2_os:
             flags.append("target-os=%s" % self._b2_os)
         if self._b2_architecture:
@@ -527,7 +527,7 @@ class BoostConan(ConanFile):
                 self.deps_cpp_info["bzip2"].libs[0])
 
         if not self.options.without_python:
-            # https://www.boost.org/doc/libs/1_69_0/libs/python/doc/html/building/configuring_boost_build.html
+            # https://www.boost.org/doc/libs/1_65_1/libs/python/doc/html/building/configuring_boost_build.html
             contents += "\nusing python : {version} : {executable} : {includes} :  {libraries} ;"\
                 .format(version=self._python_version,
                         executable=self._python_executable,
