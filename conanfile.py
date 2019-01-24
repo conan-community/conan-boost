@@ -603,6 +603,9 @@ class BoostConan(ConanFile):
             comp_ver = self.settings.compiler.version
             return "vc%s" % ("141" if Version(str(comp_ver)) >= "15" else comp_ver)
 
+        if tools.os_info.is_windows:
+            return ""
+
         with_toolset = {"apple-clang": "darwin"}.get(str(self.settings.compiler),
                                                      str(self.settings.compiler))
 
