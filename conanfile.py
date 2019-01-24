@@ -415,9 +415,10 @@ class BoostConan(ConanFile):
             if getattr(self.options, "without_%s" % libname):
                 flags.append("--without-%s" % libname)
 
+        toolset, _, _ = self.get_toolset_version_and_exe()
+        flags.append("toolset=%s" % toolset)
+
         if self.settings.cppstd:
-            toolset, _, _ = self.get_toolset_version_and_exe()
-            flags.append("toolset=%s" % toolset)
             flags.append("cxxflags=%s" % cppstd_flag(
                     self.settings.get_safe("compiler"),
                     self.settings.get_safe("compiler.version"),
@@ -614,7 +615,7 @@ class BoostConan(ConanFile):
             with tools.vcvars(self.settings) if self.settings.compiler == "Visual Studio" else tools.no_op():
                 self.output.info("Using %s %s" % (self.settings.compiler, self.settings.compiler.version))
                 with tools.chdir(folder):
-                    option = "" if tools.os_info.is_windows else "-with-toolset="
+                    option = "" if tools.os_info.is_windows else "--with-toolset="
                     cmd = "%s %s%s" % (bootstrap, option, self._get_boostrap_toolset())
                     self.output.info(cmd)
                     self.run(cmd)
