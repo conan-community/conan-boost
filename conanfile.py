@@ -208,9 +208,10 @@ class BoostConan(ConanFile):
             if getattr(self.options, "without_%s" % libname):
                 flags.append("--without-%s" % libname)
 
+        toolset, _, _ = self.get_toolset_version_and_exe()
+        flags.append("toolset=%s" % toolset)
+
         if self.settings.cppstd:
-            toolset, _, _ = self.get_toolset_version_and_exe()
-            flags.append("toolset=%s" % toolset)
             flags.append("cxxflags=%s" % cppstd_flag(
                     self.settings.get_safe("compiler"),
                     self.settings.get_safe("compiler.version"),
