@@ -69,6 +69,10 @@ class BoostConan(ConanFile):
             self.options.remove("fPIC")
 
     @property
+    def _is_msvc(self):
+        return self.settings.compiler == "Visual Studio"
+
+    @property
     def zip_bzip2_requires_needed(self):
         return not self.options.without_iostreams and not self.options.header_only
 
@@ -254,8 +258,8 @@ class BoostConan(ConanFile):
             libdir = os.path.join(os.path.dirname(libdest), "libs")
 
         candidates = [ldlibrary, library]
-        library_prefixes = [""] if self.settings.compiler == "Visual Studio" else ["", "lib"]
-        library_suffixes = [".lib"] if self.settings.compiler == "Visual Studio" else [".so", ".dll.a", ".a"]
+        library_prefixes = [""] if self._is_msvc else ["", "lib"]
+        library_suffixes = [".lib"] if self._is_msvc else [".so", ".dll.a", ".a"]
         if with_dyld:
             library_suffixes.insert(0, ".dylib")
 
@@ -307,7 +311,7 @@ class BoostConan(ConanFile):
         full_command += ' --debug-configuration --build-dir="%s"' % self.build_folder
         self.output.warn(full_command)
 
-        with tools.vcvars(self.settings) if self.settings.compiler == "Visual Studio" else tools.no_op():
+        with tools.vcvars(self.settings) if self._is_msvc else tools.no_op():
             with tools.chdir(sources):
                 # to locate user config jam (BOOST_BUILD_PATH)
                 with tools.environment_append({"BOOST_BUILD_PATH": self.build_folder}):
@@ -400,7 +404,7 @@ class BoostConan(ConanFile):
         if self.settings.compiler == "gcc":
             flags.append("--layout=system")
 
-        if self.settings.compiler == "Visual Studio" and self.settings.compiler.runtime:
+        if self._is_msvc and self.settings.compiler.runtime:
             flags.append("runtime-link=%s" % ("static" if "MT" in str(self.settings.compiler.runtime) else "shared"))
 
         flags.append("threading=multi")
@@ -569,7 +573,7 @@ class BoostConan(ConanFile):
     def get_toolset_version_and_exe(self):
         compiler_version = str(self.settings.compiler.version)
         compiler = str(self.settings.compiler)
-        if self.settings.compiler == "Visual Studio":
+        if self._is_msvc:
             cversion = self.settings.compiler.version
             _msvc_version = "14.1" if Version(str(cversion)) >= "15" else "%s.0" % cversion
             return "msvc", _msvc_version, ""
@@ -595,7 +599,7 @@ class BoostConan(ConanFile):
 
     ##################### BOOSTRAP METHODS ###########################
     def _get_boostrap_toolset(self):
-        if self.settings.os == "Windows" and self.settings.compiler == "Visual Studio":
+        if self._is_msvc:
             comp_ver = self.settings.compiler.version
             return "vc%s" % ("141" if Version(str(comp_ver)) >= "15" else comp_ver)
 
@@ -611,9 +615,10 @@ class BoostConan(ConanFile):
         folder = os.path.join(self.source_folder, self.folder_name, "tools", "build")
         try:
             bootstrap = "bootstrap.bat" if tools.os_info.is_windows else "./bootstrap.sh"
-            with tools.vcvars(self.settings) if self.settings.compiler == "Visual Studio" else tools.no_op():
+            with tools.vcvars(self.settings) if self._is_msvc else tools.no_op():
                 self.output.info("Using %s %s" % (self.settings.compiler, self.settings.compiler.version))
                 with tools.chdir(folder):
+                    print(tools.os_info.is_windows)
                     option = "" if tools.os_info.is_windows else "-with-toolset="
                     cmd = "%s %s%s" % (bootstrap, option, self._get_boostrap_toolset())
                     self.output.info(cmd)
@@ -703,7 +708,7 @@ class BoostConan(ConanFile):
                 if not self.options.shared:
                     self.cpp_info.defines.append("BOOST_PYTHON_STATIC_LIB")
 
-            if self.settings.compiler == "Visual Studio":
+            if self._is_msvc:
                 if not self.options.magic_autolink:
                     # DISABLES AUTO LINKING! NO SMART AND MAGIC DECISIONS THANKS!
                     self.cpp_info.defines.extend(["BOOST_ALL_NO_LIB"])
