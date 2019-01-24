@@ -622,7 +622,6 @@ class BoostConan(ConanFile):
             with tools.vcvars(self.settings) if self._is_msvc else tools.no_op():
                 self.output.info("Using %s %s" % (self.settings.compiler, self.settings.compiler.version))
                 with tools.chdir(folder):
-                    print(tools.os_info.is_windows)
                     option = "" if tools.os_info.is_windows else "-with-toolset="
                     cmd = "%s %s%s" % (bootstrap, option, self._get_boostrap_toolset())
                     self.output.info(cmd)
