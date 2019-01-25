@@ -415,8 +415,11 @@ class BoostConan(ConanFile):
             if getattr(self.options, "without_%s" % libname):
                 flags.append("--without-%s" % libname)
 
-        toolset, _, _ = self.get_toolset_version_and_exe()
-        flags.append("toolset=%s" % toolset)
+        toolset, toolset_version, _ = self.get_toolset_version_and_exe()
+        if toolset == "msvc":
+            flags.append("toolset=%s-%s" % (toolset, toolset_version))
+        else:
+            flags.append("toolset=%s" % toolset)
 
         if self.settings.cppstd:
             flags.append("cxxflags=%s" % cppstd_flag(
