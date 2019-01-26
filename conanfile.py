@@ -17,7 +17,7 @@ except ImportError:
 # see https://github.com/Kitware/CMake/blob/master/Modules/FindBoost.cmake to know the order
 
 
-lib_list = ['math', 'wave', 'container', 'contract', 'exception', 'graph', 'iostreams', 'locale', 'log',
+lib_list = ['math', 'wave', 'container', 'exception', 'graph', 'iostreams', 'locale', 'log',
             'program_options', 'random', 'regex', 'mpi', 'serialization',
             'coroutine', 'fiber', 'context', 'timer', 'thread', 'chrono', 'date_time',
             'atomic', 'filesystem', 'system', 'graph_parallel', 'python',
@@ -26,7 +26,7 @@ lib_list = ['math', 'wave', 'container', 'contract', 'exception', 'graph', 'iost
 
 class BoostConan(ConanFile):
     name = "boost"
-    version = "1.69.0"
+    version = "1.65.1"
     settings = "os", "arch", "compiler", "build_type", "cppstd"
     folder_name = "boost_%s" % version.replace(".", "_")
     description = "Boost provides free peer-reviewed portable C++ source libraries"
@@ -89,10 +89,10 @@ class BoostConan(ConanFile):
 
     def source(self):
         if tools.os_info.is_windows:
-            sha256 = "d074bcbcc0501c4917b965fc890e303ee70d8b01ff5712bae4a6c54f2b6b4e52"
+            sha256 = "d1775aef807bd6a14077b450cce2950d8eacd86aaf51015f79e712917f8cc3c2"
             extension = ".zip"
         else:
-            sha256 = "9a2c2819310839ea373f42d69e733c339b4e9a19deab6bfec448281554aa4dbb"
+            sha256 = "a13de2c8fbad635e6ba9c8f8714a0e6b4264b60a29b964b940a22554705b6b60"
             extension = ".tar.gz"
 
         zip_name = "%s%s" % (self.folder_name, extension)
@@ -100,7 +100,7 @@ class BoostConan(ConanFile):
         tools.get(url, sha256=sha256)
 
         tools.patch(base_path=os.path.join(self.source_folder, self.folder_name),
-                    patch_file='patches/python_base_prefix.patch', strip=1)
+                    patch_file='patches/os.jam.patch', strip=1)
 
     ##################### BUILDING METHODS ###########################
 
@@ -385,7 +385,7 @@ class BoostConan(ConanFile):
         else:
             flags = []
 
-        # https://www.boost.org/doc/libs/1_69_0/libs/context/doc/html/context/architectures.html
+        # https://www.boost.org/doc/libs/1_65_1/libs/context/doc/html/context/architectures.html
         if self._b2_os:
             flags.append("target-os=%s" % self._b2_os)
         if self._b2_architecture:
@@ -415,9 +415,13 @@ class BoostConan(ConanFile):
             if getattr(self.options, "without_%s" % libname):
                 flags.append("--without-%s" % libname)
 
-        if self.settings.cppstd:
-            toolset, _, _ = self.get_toolset_version_and_exe()
+        toolset, toolset_version, _ = self.get_toolset_version_and_exe()
+        if toolset == "msvc":
+            flags.append("toolset=%s-%s" % (toolset, toolset_version))
+        else:
             flags.append("toolset=%s" % toolset)
+
+        if self.settings.cppstd:
             flags.append("cxxflags=%s" % cppstd_flag(
                     self.settings.get_safe("compiler"),
                     self.settings.get_safe("compiler.version"),
@@ -527,7 +531,7 @@ class BoostConan(ConanFile):
                 self.deps_cpp_info["bzip2"].libs[0])
 
         if not self.options.without_python:
-            # https://www.boost.org/doc/libs/1_69_0/libs/python/doc/html/building/configuring_boost_build.html
+            # https://www.boost.org/doc/libs/1_65_1/libs/python/doc/html/building/configuring_boost_build.html
             contents += "\nusing python : {version} : {executable} : {includes} :  {libraries} ;"\
                 .format(version=self._python_version,
                         executable=self._python_executable,
@@ -614,7 +618,7 @@ class BoostConan(ConanFile):
             with tools.vcvars(self.settings) if self.settings.compiler == "Visual Studio" else tools.no_op():
                 self.output.info("Using %s %s" % (self.settings.compiler, self.settings.compiler.version))
                 with tools.chdir(folder):
-                    option = "" if tools.os_info.is_windows else "-with-toolset="
+                    option = "" if tools.os_info.is_windows else "--with-toolset="
                     cmd = "%s %s%s" % (bootstrap, option, self._get_boostrap_toolset())
                     self.output.info(cmd)
                     self.run(cmd)
