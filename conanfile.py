@@ -35,6 +35,9 @@ class BoostConan(ConanFile):
     options = {
         "shared": [True, False],
         "header_only": [True, False],
+        "error_code_header_only": [True, False],
+        "system_no_deprecated": [True, False],
+        "asio_no_deprecated": [True, False],
         "fPIC": [True, False],
         "skip_lib_rename": [True, False],
         "magic_autolink": [True, False],  # enables BOOST_ALL_NO_LIB
@@ -45,6 +48,9 @@ class BoostConan(ConanFile):
 
     default_options = ["shared=False",
                        "header_only=False",
+                       "error_code_header_only=False",
+                       "system_no_deprecated=False",
+                       "asio_no_deprecated=False",
                        "fPIC=True",
                        "skip_lib_rename=False",
                        "magic_autolink=False",
@@ -453,6 +459,13 @@ class BoostConan(ConanFile):
             except:
                 pass
 
+        if self.options.error_code_header_only:
+            flags.append("define=BOOST_ERROR_CODE_HEADER_ONLY=1")
+        if self.options.system_no_deprecated:
+            flags.append("define=BOOST_SYSTEM_NO_DEPRECATED=1")
+        if self.options.asio_no_deprecated:
+            flags.append("define=BOOST_ASIO_NO_DEPRECATED=1")
+
         if tools.is_apple_os(self.settings.os):
             if self.settings.get_safe("os.version"):
                 cxx_flags.append(tools.apple_deployment_target_flag(self.settings.os,
@@ -706,7 +719,16 @@ class BoostConan(ConanFile):
         else:
             self.cpp_info.defines.append("BOOST_USE_STATIC_LIBS")
 
+        if self.options.system_no_deprecated:
+            self.cpp_info.defines.append("BOOST_SYSTEM_NO_DEPRECATED")
+
+        if self.options.asio_no_deprecated:
+            self.cpp_info.defines.append("BOOST_ASIO_NO_DEPRECATED")
+
         if not self.options.header_only:
+            if self.options.error_code_header_only:
+                self.cpp_info.defines.append("BOOST_ERROR_CODE_HEADER_ONLY")
+
             if not self.options.without_python:
                 if not self.options.shared:
                     self.cpp_info.defines.append("BOOST_PYTHON_STATIC_LIB")
