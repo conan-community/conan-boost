@@ -1,16 +1,22 @@
-[![Build status](https://ci.appveyor.com/api/projects/status/hlb8joewtth07nmb/branch/release/1.68.0?svg=true)](https://ci.appveyor.com/project/lasote/conan-boost/branch/release/1.68.0)
+[![Download](https://api.bintray.com/packages/conan-community/conan/boost%3Aconan/images/download.svg) ](https://bintray.com/conan-community/conan/boost%3Aconan/_latestVersion)
+[![Build Status Travis](https://travis-ci.org/conan-community/conan-boost.svg)](https://travis-ci.org/conan-community/conan-boost)
+[![Build Status AppVeyor](https://ci.appveyor.com/api/projects/status/github/conan-community/conan-boost?svg=true)](https://ci.appveyor.com/project/ConanCIintegration/conan-boost)
 
-[![Build Status](https://travis-ci.org/lasote/conan-boost.svg?branch=release%2F1.68.0)](https://travis-ci.org/lasote/conan-boost)
+## Conan package recipe for *boost*
 
-# conan-boost
+Boost provides free peer-reviewed portable C++ source libraries
 
-Conan package for Boost library
+The packages generated with this **conanfile** can be found on [Bintray](https://bintray.com/conan-community/conan/boost%3Aconan).
 
-Thanks to @DavidZemon for the huge help with cross-building support!
 
-The packages generated with this **conanfile** can be found on [bintray](https://bintray.com/conan-community).
+## Issues
 
-## Reuse the packages
+If you wish to report an issue or make a request for a package, please do so here:
+
+[Issues Tracker](https://github.com/conan-community/community/issues)
+
+
+## For Users
 
 ### Basic setup
 
@@ -23,53 +29,73 @@ If you handle multiple dependencies in your project is better to add a *conanfil
     [requires]
     boost/1.68.0@conan/stable
 
-    [options]
-    boost:shared=True # False
-    # Take a look for all available options in conanfile.py
-
     [generators]
-    cmake
+    txt
 
-Complete the installation of requirements for your project running:</small></span>
+Complete the installation of requirements for your project running:
 
-    conan install .
+    $ mkdir build && cd build && conan install ..
 
-Project setup installs the library (and all his dependencies) and generates the files *conanbuildinfo.txt* and *conanbuildinfo.cmake*
-with all the paths and variables that you need to link with your dependencies.
-
-Follow the Conan getting started: http://docs.conan.io
+Note: It is recommended that you run conan install from a build directory and not the root of the project directory.  This is because conan generates *conanbuildinfo* files specific to a single build configuration which by default comes from an autodetected default profile located in ~/.conan/profiles/default .  If you pass different build configuration options to conan install, it will generate different *conanbuildinfo* files.  Thus, they should not be added to the root of the project, nor committed to git.
 
 
-### Cross building
+## Build and package
 
-The package works cross compiled to ARM, tested from windows, using the SYSGCC toolchain and the following profile:
+The following command both runs all the steps of the conan file, and publishes the package to the local system cache.  This includes downloading dependencies from "build_requires" and "requires" , and then running the build() method.
 
-    target_host=arm-linux-gnueabihf
-    standalone_toolchain=C:/sysgcc/raspberry
-    cc_compiler=gcc
-    cxx_compiler=g++
-
-    [settings]
-    os=Linux
-    arch=armv7
-    compiler=gcc
-    compiler.version=6
-    compiler.libcxx=libstdc++
-    build_type=Release
-
-    [env]
-    CONAN_CMAKE_FIND_ROOT_PATH=$standalone_toolchain/$target_host/sysroot
-    SYSROOT=$standalone_toolchain/$target_host/sysroot
-    PATH=[$standalone_toolchain/bin]
-    CHOST=$target_host
-    AR=$target_host-ar
-    AS=$target_host-as
-    RANLIB=$target_host-ranlib
-    LD=$target_host-ld
-    STRIP=$target_host-strip
-    CC=$target_host-$cc_compiler
-    CXX=$target_host-$cxx_compiler
-    CXXFLAGS=-I"$standalone_toolchain/$target_host/lib/include"
+    $ conan create . conan/stable
 
 
-Apply the profile when running "conan install" or "conan create" with ``--profile`` option.
+### Available Options
+| Option        | Default | Possible Values  |
+| ------------- |:----------------- |:------------:|
+| shared      | False |  [True, False] |
+| header_only      | False |  [True, False] |
+| fPIC      | True |  [True, False] |
+| skip_lib_rename      | False |  [True, False] |
+| magic_autolink      | False |  [True, False] |
+| without_math      | False |  [True, False] |
+| without_wave      | False |  [True, False] |
+| without_container      | False |  [True, False] |
+| without_contract      | False |  [True, False] |
+| without_exception      | False |  [True, False] |
+| without_graph      | False |  [True, False] |
+| without_iostreams      | False |  [True, False] |
+| without_locale      | False |  [True, False] |
+| without_log      | False |  [True, False] |
+| without_program_options      | False |  [True, False] |
+| without_random      | False |  [True, False] |
+| without_regex      | False |  [True, False] |
+| without_mpi      | False |  [True, False] |
+| without_serialization      | False |  [True, False] |
+| without_signals      | False |  [True, False] |
+| without_coroutine      | False |  [True, False] |
+| without_fiber      | False |  [True, False] |
+| without_context      | False |  [True, False] |
+| without_timer      | False |  [True, False] |
+| without_thread      | False |  [True, False] |
+| without_chrono      | False |  [True, False] |
+| without_date_time      | False |  [True, False] |
+| without_atomic      | False |  [True, False] |
+| without_filesystem      | False |  [True, False] |
+| without_system      | False |  [True, False] |
+| without_graph_parallel      | False |  [True, False] |
+| without_python      | True |  [True, False] |
+| without_stacktrace      | False |  [True, False] |
+| without_test      | False |  [True, False] |
+| without_type_erasure      | False |  [True, False] |
+
+
+## Add Remote
+
+Conan Community has its own Bintray repository, however, we are working to distribute all package in the Conan Center:
+
+    $ conan remote add conan-center "https://conan.bintray.com"
+
+
+## Conan Recipe License
+
+NOTE: The conan recipe license applies only to the files of this recipe, which can be used to build and package boost.
+It does *not* in any way apply or is related to the actual software being packaged.
+
+[MIT](LICENSE)
