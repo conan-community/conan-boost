@@ -1,48 +1,97 @@
-[![Build Status](https://travis-ci.org/lasote/conan-boost.svg?branch=master)](https://travis-ci.org/lasote/conan-boost)
+[![Download](https://api.bintray.com/packages/conan-community/conan/Boost%3Aconan/images/download.svg) ](https://bintray.com/conan-community/conan/Boost%3Aconan/_latestVersion)
+[![Build Status Travis](https://travis-ci.org/conan-community/conan-Boost.svg)](https://travis-ci.org/conan-community/conan-Boost)
+[![Build Status AppVeyor](https://ci.appveyor.com/api/projects/status/github/conan-community/conan-Boost?svg=true)](https://ci.appveyor.com/project/ConanCIintegration/conan-Boost)
 
-# conan-boost
+## Conan package recipe for *Boost*
 
 
 
-[![badge](https://img.shields.io/badge/conan.io-Boost%2F1.62.0-green.svg?logo=data:image/png;base64%2CiVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAMAAAAolt3jAAAA1VBMVEUAAABhlctjlstkl8tlmMtlmMxlmcxmmcxnmsxpnMxpnM1qnc1sn85voM91oM11oc1xotB2oc56pNF6pNJ2ptJ8ptJ8ptN9ptN8p9N5qNJ9p9N9p9R8qtOBqdSAqtOAqtR%2BrNSCrNJ/rdWDrNWCsNWCsNaJs9eLs9iRvNuVvdyVv9yXwd2Zwt6axN6dxt%2Bfx%2BChyeGiyuGjyuCjyuGly%2BGlzOKmzOGozuKoz%2BKqz%2BOq0OOv1OWw1OWw1eWx1eWy1uay1%2Baz1%2Baz1%2Bez2Oe02Oe12ee22ujUGwH3AAAAAXRSTlMAQObYZgAAAAFiS0dEAIgFHUgAAAAJcEhZcwAACxMAAAsTAQCanBgAAAAHdElNRQfgBQkREyOxFIh/AAAAiklEQVQI12NgAAMbOwY4sLZ2NtQ1coVKWNvoc/Eq8XDr2wB5Ig62ekza9vaOqpK2TpoMzOxaFtwqZua2Bm4makIM7OzMAjoaCqYuxooSUqJALjs7o4yVpbowvzSUy87KqSwmxQfnsrPISyFzWeWAXCkpMaBVIC4bmCsOdgiUKwh3JojLgAQ4ZCE0AMm2D29tZwe6AAAAAElFTkSuQmCC)](http://www.conan.io/source/Boost/1.62.0/lasote/stable)
-[Conan.io](https://conan.io) package for boost library
+The packages generated with this **conanfile** can be found on [Bintray](https://bintray.com/conan-community/conan/Boost%3Aconan).
 
-The packages generated with this **conanfile** can be found in [conan.io](https://conan.io/source/boost/1.62.0/lasote/stable).
 
-## Build packages
+## Issues
 
-Download conan client from [Conan.io](https://conan.io) and run:
+If you wish to report an issue or make a request for a package, please do so here:
 
-    $ python build.py
-    
-## Upload packages to server
+[Issues Tracker](https://github.com/conan-community/community/issues)
 
-    $ conan upload boost/1.62.0@lasote/stable --all
-    
-## Reuse the packages
+
+## For Users
 
 ### Basic setup
 
-    $ conan install boost/1.62.0@lasote/stable
-    
+    $ conan install Boost/1.62.0@conan/stable
+
 ### Project setup
 
 If you handle multiple dependencies in your project is better to add a *conanfile.txt*
-    
-    [requires]
-    boost/1.62.0@lasote/stable
 
-    [options]
-    boost:shared=true # false
-    # Take a look for all available options in conanfile.py
-    
+    [requires]
+    Boost/1.62.0@conan/stable
+
     [generators]
     txt
-    cmake
 
-Complete the installation of requirements for your project running:</small></span>
+Complete the installation of requirements for your project running:
 
-    conan install . 
+    $ mkdir build && cd build && conan install ..
 
-Project setup installs the library (and all his dependencies) and generates the files *conanbuildinfo.txt* and *conanbuildinfo.cmake* with all the paths and variables that you need to link with your dependencies.
+Note: It is recommended that you run conan install from a build directory and not the root of the project directory.  This is because conan generates *conanbuildinfo* files specific to a single build configuration which by default comes from an autodetected default profile located in ~/.conan/profiles/default .  If you pass different build configuration options to conan install, it will generate different *conanbuildinfo* files.  Thus, they should not be added to the root of the project, nor committed to git.
 
+
+## Build and package
+
+The following command both runs all the steps of the conan file, and publishes the package to the local system cache.  This includes downloading dependencies from "build_requires" and "requires" , and then running the build() method.
+
+    $ conan create . conan/stable
+
+
+### Available Options
+| Option        | Default | Possible Values  |
+| ------------- |:----------------- |:------------:|
+| shared      | False |  [True, False] |
+| header_only      | False |  [True, False] |
+| fPIC      | False |  [True, False] |
+| python      | False |  [True, False] |
+| without_atomic      | False |  [True, False] |
+| without_chrono      | False |  [True, False] |
+| without_container      | False |  [True, False] |
+| without_context      | False |  [True, False] |
+| without_coroutine      | False |  [True, False] |
+| without_coroutine2      | False |  [True, False] |
+| without_date_time      | False |  [True, False] |
+| without_exception      | False |  [True, False] |
+| without_filesystem      | False |  [True, False] |
+| without_graph      | False |  [True, False] |
+| without_graph_parallel      | False |  [True, False] |
+| without_iostreams      | False |  [True, False] |
+| without_locale      | False |  [True, False] |
+| without_log      | False |  [True, False] |
+| without_math      | False |  [True, False] |
+| without_mpi      | False |  [True, False] |
+| without_program_options      | False |  [True, False] |
+| without_random      | False |  [True, False] |
+| without_regex      | False |  [True, False] |
+| without_serialization      | False |  [True, False] |
+| without_signals      | False |  [True, False] |
+| without_system      | False |  [True, False] |
+| without_test      | False |  [True, False] |
+| without_thread      | False |  [True, False] |
+| without_timer      | False |  [True, False] |
+| without_type_erasure      | False |  [True, False] |
+| without_wave      | False |  [True, False] |
+
+
+## Add Remote
+
+Conan Community has its own Bintray repository, however, we are working to distribute all package in the Conan Center:
+
+    $ conan remote add conan-center "https://conan.bintray.com"
+
+
+## Conan Recipe License
+
+NOTE: The conan recipe license applies only to the files of this recipe, which can be used to build and package Boost.
+It does *not* in any way apply or is related to the actual software being packaged.
+
+[MIT](LICENSE)
