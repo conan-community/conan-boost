@@ -35,21 +35,31 @@ class BoostConan(ConanFile):
     options = {
         "shared": [True, False],
         "header_only": [True, False],
+        "error_code_header_only": [True, False],
+        "system_no_deprecated": [True, False],
+        "asio_no_deprecated": [True, False],
         "fPIC": [True, False],
         "layout": ["system", "versioned", "tagged"],
         "magic_autolink": [True, False],  # enables BOOST_ALL_NO_LIB
         "python_executable": "ANY",  # system default python installation is used, if None
-        "python_version": "ANY"  # major.minor; computed automatically, if None
+        "python_version": "ANY",  # major.minor; computed automatically, if None
+        "namespace": "ANY",  # custom boost namespace for bcp, e.g. myboost
+        "namespace_alias": [True, False]  # enable namespace alias for bcp, boost=myboost
     }
     options.update({"without_%s" % libname: [True, False] for libname in lib_list})
 
     default_options = ["shared=False",
                        "header_only=False",
+                       "error_code_header_only=False",
+                       "system_no_deprecated=False",
+                       "asio_no_deprecated=False",
                        "fPIC=True",
                        "layout=system",
                        "magic_autolink=False",
                        "python_executable=None",
-                       "python_version=None"]
+                       "python_version=None",
+                       "namespace=boost",
+                       "namespace_alias=False"]
 
     default_options.extend(["without_%s=False" % libname for libname in lib_list if libname != "python"])
     default_options.append("without_python=True")
@@ -64,9 +74,15 @@ class BoostConan(ConanFile):
 
     exports = ['patches/*']
 
+    _bcp_dir = "custom-boost"
+
     def config_options(self):
         if self.settings.os == "Windows":
             self.options.remove("fPIC")
+
+    @property
+    def _is_msvc(self):
+        return self.settings.compiler == "Visual Studio"
 
     @property
     def zip_bzip2_requires_needed(self):
@@ -254,8 +270,8 @@ class BoostConan(ConanFile):
             libdir = os.path.join(os.path.dirname(libdest), "libs")
 
         candidates = [ldlibrary, library]
-        library_prefixes = [""] if self.settings.compiler == "Visual Studio" else ["", "lib"]
-        library_suffixes = [".lib"] if self.settings.compiler == "Visual Studio" else [".so", ".dll.a", ".a"]
+        library_prefixes = [""] if self._is_msvc else ["", "lib"]
+        library_suffixes = [".lib"] if self._is_msvc else [".so", ".dll.a", ".a"]
         if with_dyld:
             library_suffixes.insert(0, ".dylib")
 
@@ -278,39 +294,104 @@ class BoostConan(ConanFile):
                     return python_lib.replace('\\', '/')
         raise Exception("couldn't locate python libraries - make sure you have installed python development files")
 
-    def build(self):
-        if self.options.header_only:
-            self.output.warn("Header only package, skipping build")
-            return
-
+    def _clean(self):
         src = os.path.join(self.source_folder, self.folder_name)
         clean_dirs = [os.path.join(self.build_folder, "bin.v2"),
                       os.path.join(self.build_folder, "architecture"),
+                      os.path.join(self.source_folder, self._bcp_dir),
+                      os.path.join(src, "dist", "bin"),
                       os.path.join(src, "stage"),
                       os.path.join(src, "tools", "build", "src", "engine", "bootstrap"),
                       os.path.join(src, "tools", "build", "src", "engine", "bin.ntx86"),
                       os.path.join(src, "tools", "build", "src", "engine", "bin.ntx86_64")]
         for d in clean_dirs:
             if os.path.isdir(d):
+                self.output.warn('removing "%s"' % d)
                 shutil.rmtree(d)
 
-        b2_exe = self.bootstrap()
+    @property
+    def _b2_exe(self):
+        folder = os.path.join(self.source_folder, self.folder_name, "tools", "build")
+        return os.path.join(folder, "b2.exe" if tools.os_info.is_windows else "b2")
+
+    @property
+    def _bcp_exe(self):
+        folder = os.path.join(self.source_folder, self.folder_name, "dist", "bin")
+        return os.path.join(folder, "bcp.exe" if tools.os_info.is_windows else "bcp")
+
+    @property
+    def _use_bcp(self):
+        return self.options.namespace != "boost"
+
+    @property
+    def _boost_dir(self):
+        return self._bcp_dir if self._use_bcp else self.folder_name
+
+    @property
+    def _boost_build_dir(self):
+        return os.path.join(self.source_folder, self.folder_name, "tools", "build")
+
+    def _build_bcp(self):
+        folder = os.path.join(self.source_folder, self.folder_name, 'tools', 'bcp')
+        with tools.vcvars(self.settings) if self._is_msvc else tools.no_op():
+            with tools.chdir(folder):
+                command = "%s -j%s --abbreviate-paths -d2" % (self._b2_exe, tools.cpu_count())
+                self.output.warn(command)
+                self.run(command)
+
+    def _run_bcp(self):
+        with tools.vcvars(self.settings) if self._is_msvc else tools.no_op():
+            with tools.chdir(self.source_folder):
+                os.mkdir(self._bcp_dir)
+                namespace = "--namespace=%s" % self.options.namespace
+                alias = "--namespace-alias" if self.options.namespace_alias else ""
+                boostdir = "--boost=%s" % self.folder_name
+                libraries = {"build", "boost-build.jam", "boostcpp.jam"}
+                for d in os.listdir(os.path.join(self.folder_name, "boost")):
+                    if os.path.isdir(os.path.join(self.folder_name, "boost", d)):
+                        libraries.add(d)
+                for d in os.listdir(os.path.join(self.folder_name, "libs")):
+                    if os.path.isdir(os.path.join(self.folder_name, "libs", d)):
+                        libraries.add(d)
+                libraries = ' '.join(libraries)
+                command = "{bcp} {namespace} {alias} " \
+                          "{boostdir} {libraries} {outdir}".format(bcp=self._bcp_exe,
+                                                                   namespace=namespace,
+                                                                   alias=alias,
+                                                                   libraries=libraries,
+                                                                   boostdir=boostdir,
+                                                                   outdir=self._bcp_dir)
+                self.output.warn(command)
+                self.run(command)
+
+    def build(self):
+        if self.options.header_only:
+            self.output.warn("Header only package, skipping build")
+            return
+
+        self._clean()
+        self._bootstrap()
+
+        if self._use_bcp:
+            self._build_bcp()
+            self._run_bcp()
+
         flags = self.get_build_flags()
         # Help locating bzip2 and zlib
-        self.create_user_config_jam(self.build_folder)
+        self.create_user_config_jam(self._boost_build_dir)
 
         # JOIN ALL FLAGS
         b2_flags = " ".join(flags)
-        full_command = "%s %s -j%s --abbreviate-paths -d2" % (b2_exe, b2_flags, tools.cpu_count())
+        full_command = "%s %s -j%s --abbreviate-paths -d2" % (self._b2_exe, b2_flags, tools.cpu_count())
         # -d2 is to print more debug info and avoid travis timing out without output
-        sources = os.path.join(self.source_folder, self.folder_name)
+        sources = os.path.join(self.source_folder, self._boost_dir)
         full_command += ' --debug-configuration --build-dir="%s"' % self.build_folder
         self.output.warn(full_command)
 
-        with tools.vcvars(self.settings) if self.settings.compiler == "Visual Studio" else tools.no_op():
+        with tools.vcvars(self.settings) if self._is_msvc else tools.no_op():
             with tools.chdir(sources):
                 # to locate user config jam (BOOST_BUILD_PATH)
-                with tools.environment_append({"BOOST_BUILD_PATH": self.build_folder}):
+                with tools.environment_append({"BOOST_BUILD_PATH": self._boost_build_dir}):
                     # To show the libraries *1
                     # self.run("%s --show-libraries" % b2_exe)
                     self.run(full_command)
@@ -398,12 +479,12 @@ class BoostConan(ConanFile):
             flags.append("abi=%s" % self._b2_abi)
 
         flags.append("--layout=%s" % self.options.layout)
+        flags.append("-sBOOST_BUILD_PATH=%s" % self._boost_build_dir)
 
-        if self.settings.compiler == "Visual Studio" and self.settings.compiler.runtime:
+        if self._is_msvc and self.settings.compiler.runtime:
             flags.append("runtime-link=%s" % ("static" if "MT" in str(self.settings.compiler.runtime) else "shared"))
 
-        if self.settings.os == "Windows" and self.settings.compiler == "gcc":
-            flags.append("threading=multi")
+        flags.append("threading=multi")
 
         flags.append("link=%s" % ("static" if not self.options.shared else "shared"))
         if self.settings.build_type == "Debug":
@@ -415,9 +496,10 @@ class BoostConan(ConanFile):
             if getattr(self.options, "without_%s" % libname):
                 flags.append("--without-%s" % libname)
 
+        toolset, _, _ = self.get_toolset_version_and_exe()
+        flags.append("toolset=%s" % toolset)
+
         if self.settings.cppstd:
-            toolset, _, _ = self.get_toolset_version_and_exe()
-            flags.append("toolset=%s" % toolset)
             flags.append("cxxflags=%s" % cppstd_flag(
                     self.settings.get_safe("compiler"),
                     self.settings.get_safe("compiler.version"),
@@ -447,6 +529,13 @@ class BoostConan(ConanFile):
                         cxx_flags.append("-stdlib=libstdc++")
             except:
                 pass
+
+        if self.options.error_code_header_only:
+            flags.append("define=BOOST_ERROR_CODE_HEADER_ONLY=1")
+        if self.options.system_no_deprecated:
+            flags.append("define=BOOST_SYSTEM_NO_DEPRECATED=1")
+        if self.options.asio_no_deprecated:
+            flags.append("define=BOOST_ASIO_NO_DEPRECATED=1")
 
         if tools.is_apple_os(self.settings.os):
             if self.settings.get_safe("os.version"):
@@ -569,7 +658,7 @@ class BoostConan(ConanFile):
     def get_toolset_version_and_exe(self):
         compiler_version = str(self.settings.compiler.version)
         compiler = str(self.settings.compiler)
-        if self.settings.compiler == "Visual Studio":
+        if self._is_msvc:
             cversion = self.settings.compiler.version
             _msvc_version = "14.1" if Version(str(cversion)) >= "15" else "%s.0" % cversion
             return "msvc", _msvc_version, ""
@@ -595,9 +684,12 @@ class BoostConan(ConanFile):
 
     ##################### BOOSTRAP METHODS ###########################
     def _get_boostrap_toolset(self):
-        if self.settings.os == "Windows" and self.settings.compiler == "Visual Studio":
+        if self._is_msvc:
             comp_ver = self.settings.compiler.version
             return "vc%s" % ("141" if Version(str(comp_ver)) >= "15" else comp_ver)
+
+        if tools.os_info.is_windows:
+            return ""
 
         with_toolset = {"apple-clang": "darwin"}.get(str(self.settings.compiler),
                                                      str(self.settings.compiler))
@@ -607,11 +699,11 @@ class BoostConan(ConanFile):
             with_toolset = "cc"
         return with_toolset
 
-    def bootstrap(self):
+    def _bootstrap(self):
         folder = os.path.join(self.source_folder, self.folder_name, "tools", "build")
         try:
             bootstrap = "bootstrap.bat" if tools.os_info.is_windows else "./bootstrap.sh"
-            with tools.vcvars(self.settings) if self.settings.compiler == "Visual Studio" else tools.no_op():
+            with tools.vcvars(self.settings) if self._is_msvc else tools.no_op():
                 self.output.info("Using %s %s" % (self.settings.compiler, self.settings.compiler.version))
                 with tools.chdir(folder):
                     option = "" if tools.os_info.is_windows else "-with-toolset="
@@ -623,15 +715,14 @@ class BoostConan(ConanFile):
             if os.path.exists(os.path.join(folder, "bootstrap.log")):
                 self.output.warn(tools.load(os.path.join(folder, "bootstrap.log")))
             raise
-        return os.path.join(folder, "b2.exe") if tools.os_info.is_windows else os.path.join(folder, "b2")
 
     ####################################################################
 
     def package(self):
         # This stage/lib is in source_folder... Face palm, looks like it builds in build but then
         # copy to source with the good lib name
-        out_lib_dir = os.path.join(self.folder_name, "stage", "lib")
-        self.copy(pattern="*", dst="include/boost", src="%s/boost" % self.folder_name)
+        out_lib_dir = os.path.join(self._boost_dir, "stage", "lib")
+        self.copy(pattern="*", dst="include/boost", src="%s/boost" % self._boost_dir)
         if not self.options.shared:
             self.copy(pattern="*.a", dst="lib", src=out_lib_dir, keep_path=False)
         self.copy(pattern="*.so", dst="lib", src=out_lib_dir, keep_path=False, symlinks=True)
@@ -678,12 +769,21 @@ class BoostConan(ConanFile):
         else:
             self.cpp_info.defines.append("BOOST_USE_STATIC_LIBS")
 
+        if self.options.system_no_deprecated:
+            self.cpp_info.defines.append("BOOST_SYSTEM_NO_DEPRECATED")
+
+        if self.options.asio_no_deprecated:
+            self.cpp_info.defines.append("BOOST_ASIO_NO_DEPRECATED")
+
         if not self.options.header_only:
+            if self.options.error_code_header_only:
+                self.cpp_info.defines.append("BOOST_ERROR_CODE_HEADER_ONLY")
+
             if not self.options.without_python:
                 if not self.options.shared:
                     self.cpp_info.defines.append("BOOST_PYTHON_STATIC_LIB")
 
-            if self.settings.compiler == "Visual Studio":
+            if self._is_msvc:
                 if not self.options.magic_autolink:
                     # DISABLES AUTO LINKING! NO SMART AND MAGIC DECISIONS THANKS!
                     self.cpp_info.defines.append("BOOST_ALL_NO_LIB")
