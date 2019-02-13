@@ -38,6 +38,7 @@ class BoostConan(ConanFile):
         "error_code_header_only": [True, False],
         "system_no_deprecated": [True, False],
         "asio_no_deprecated": [True, False],
+        "filesystem_no_deprecated": [True, False],
         "fPIC": [True, False],
         "layout": ["system", "versioned", "tagged"],
         "magic_autolink": [True, False],  # enables BOOST_ALL_NO_LIB
@@ -53,6 +54,7 @@ class BoostConan(ConanFile):
                        "error_code_header_only=False",
                        "system_no_deprecated=False",
                        "asio_no_deprecated=False",
+                       "filesystem_no_deprecated=False",
                        "fPIC=True",
                        "layout=system",
                        "magic_autolink=False",
@@ -536,6 +538,8 @@ class BoostConan(ConanFile):
             flags.append("define=BOOST_SYSTEM_NO_DEPRECATED=1")
         if self.options.asio_no_deprecated:
             flags.append("define=BOOST_ASIO_NO_DEPRECATED=1")
+        if self.options.filesystem_no_deprecated:
+            flags.append("define=BOOST_FILESYSTEM_NO_DEPRECATED=1")
 
         if tools.is_apple_os(self.settings.os):
             if self.settings.get_safe("os.version"):
@@ -774,6 +778,9 @@ class BoostConan(ConanFile):
 
         if self.options.asio_no_deprecated:
             self.cpp_info.defines.append("BOOST_ASIO_NO_DEPRECATED")
+
+        if self.options.filesystem_no_deprecated:
+            self.cpp_info.defines.append("BOOST_FILESYSTEM_NO_DEPRECATED")
 
         if not self.options.header_only:
             if self.options.error_code_header_only:
