@@ -504,10 +504,11 @@ class BoostConan(ConanFile):
                 for define in self.deps_cpp_info[library].defines:
                     flags.append("define=%s" % define)
 
-        add_defines(self.options.zlib, "zlib")
-        add_defines(self.options.bzip2, "bzip2")
-        add_defines(self.options.lzma, "lzma")
-        add_defines(self.options.zstd, "zstd")
+        if self.zip_bzip2_requires_needed:
+            add_defines(self.options.zlib, "zlib")
+            add_defines(self.options.bzip2, "bzip2")
+            add_defines(self.options.lzma, "lzma")
+            add_defines(self.options.zstd, "zstd")
 
         if self._is_msvc and self.settings.compiler.runtime:
             flags.append("runtime-link=%s" % ("static" if "MT" in str(self.settings.compiler.runtime) else "shared"))
