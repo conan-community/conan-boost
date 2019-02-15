@@ -48,7 +48,8 @@ class BoostConan(ConanFile):
         "namespace_alias": [True, False],  # enable namespace alias for bcp, boost=myboost
         "zlib": [True, False],
         "bzip2": [True, False],
-        "lzma": [True, False]
+        "lzma": [True, False],
+        "zstd": [True, False]
     }
     options.update({"without_%s" % libname: [True, False] for libname in lib_list})
 
@@ -67,7 +68,8 @@ class BoostConan(ConanFile):
                        "namespace_alias=False",
                        "zlib=True",
                        "bzip2=True",
-                       "lzma=True"]
+                       "lzma=True",
+                       "zstd=True"]
 
     default_options.extend(["without_%s=False" % libname for libname in lib_list if libname != "python"])
     default_options.append("without_python=True")
@@ -102,6 +104,8 @@ class BoostConan(ConanFile):
                 self.requires("bzip2/1.0.6@conan/stable")
             if self.options.lzma:
                 self.requires("lzma/5.2.4@bincrafters/stable")
+            if self.options.zstd:
+                self.requires("zstd/1.3.5@bincrafters/stable")
 
     def package_id(self):
         if self.options.header_only:
@@ -493,6 +497,17 @@ class BoostConan(ConanFile):
         flags.append("-sNO_ZLIB=%s" % ("0" if self.options.zlib else "1"))
         flags.append("-sNO_BZIP2=%s" % ("0" if self.options.bzip2 else "1"))
         flags.append("-sNO_LZMA=%s" % ("0" if self.options.lzma else "1"))
+        flags.append("-sNO_ZSTD=%s" % ("0" if self.options.zstd else "1"))
+
+        def add_defines(option, library):
+            if option:
+                for define in self.deps_cpp_info[library].defines:
+                    flags.append("define=%s" % define)
+
+        add_defines(self.options.zlib, "zlib")
+        add_defines(self.options.bzip2, "bzip2")
+        add_defines(self.options.lzma, "lzma")
+        add_defines(self.options.zstd, "zstd")
 
         if self._is_msvc and self.settings.compiler.runtime:
             flags.append("runtime-link=%s" % ("static" if "MT" in str(self.settings.compiler.runtime) else "shared"))
@@ -643,6 +658,8 @@ class BoostConan(ConanFile):
                 contents += create_library_config("bzip2")
             if self.options.lzma:
                 contents += create_library_config("lzma")
+            if self.options.zstd:
+                contents += create_library_config("zstd")
 
         if not self.options.without_python:
             # https://www.boost.org/doc/libs/1_69_0/libs/python/doc/html/building/configuring_boost_build.html
