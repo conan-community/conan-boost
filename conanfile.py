@@ -68,8 +68,8 @@ class BoostConan(ConanFile):
                        "namespace_alias=False",
                        "zlib=True",
                        "bzip2=True",
-                       "lzma=True",
-                       "zstd=True"]
+                       "lzma=False",
+                       "zstd=False"]
 
     default_options.extend(["without_%s=False" % libname for libname in lib_list if libname != "python"])
     default_options.append("without_python=True")
