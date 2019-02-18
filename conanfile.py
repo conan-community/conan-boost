@@ -45,7 +45,11 @@ class BoostConan(ConanFile):
         "python_executable": "ANY",  # system default python installation is used, if None
         "python_version": "ANY",  # major.minor; computed automatically, if None
         "namespace": "ANY",  # custom boost namespace for bcp, e.g. myboost
-        "namespace_alias": [True, False]  # enable namespace alias for bcp, boost=myboost
+        "namespace_alias": [True, False],  # enable namespace alias for bcp, boost=myboost
+        "zlib": [True, False],
+        "bzip2": [True, False],
+        "lzma": [True, False],
+        "zstd": [True, False]
     }
     options.update({"without_%s" % libname: [True, False] for libname in lib_list})
 
@@ -61,12 +65,14 @@ class BoostConan(ConanFile):
                        "python_executable=None",
                        "python_version=None",
                        "namespace=boost",
-                       "namespace_alias=False"]
+                       "namespace_alias=False",
+                       "zlib=True",
+                       "bzip2=True",
+                       "lzma=False",
+                       "zstd=False"]
 
     default_options.extend(["without_%s=False" % libname for libname in lib_list if libname != "python"])
     default_options.append("without_python=True")
-    default_options.append("bzip2:shared=False")
-    default_options.append("zlib:shared=False")
     default_options = tuple(default_options)
 
     url = "https://github.com/lasote/conan-boost"
@@ -92,8 +98,14 @@ class BoostConan(ConanFile):
 
     def configure(self):
         if self.zip_bzip2_requires_needed:
-            self.requires("bzip2/1.0.6@conan/stable")
-            self.requires("zlib/1.2.11@conan/stable")
+            if self.options.zlib:
+                self.requires("zlib/1.2.11@conan/stable")
+            if self.options.bzip2:
+                self.requires("bzip2/1.0.6@conan/stable")
+            if self.options.lzma:
+                self.requires("lzma/5.2.4@bincrafters/stable")
+            if self.options.zstd:
+                self.requires("zstd/1.3.5@bincrafters/stable")
 
     def package_id(self):
         if self.options.header_only:
@@ -482,6 +494,20 @@ class BoostConan(ConanFile):
 
         flags.append("--layout=%s" % self.options.layout)
         flags.append("-sBOOST_BUILD_PATH=%s" % self._boost_build_dir)
+        flags.append("-sNO_ZLIB=%s" % ("0" if self.options.zlib else "1"))
+        flags.append("-sNO_BZIP2=%s" % ("0" if self.options.bzip2 else "1"))
+        flags.append("-sNO_LZMA=%s" % ("0" if self.options.lzma else "1"))
+        flags.append("-sNO_ZSTD=%s" % ("0" if self.options.zstd else "1"))
+
+        def add_defines(option, library):
+            if option:
+                for define in self.deps_cpp_info[library].defines:
+                    flags.append("define=%s" % define)
+
+        add_defines(self.options.zlib, "zlib")
+        add_defines(self.options.bzip2, "bzip2")
+        add_defines(self.options.lzma, "lzma")
+        add_defines(self.options.zstd, "zstd")
 
         if self._is_msvc and self.settings.compiler.runtime:
             flags.append("runtime-link=%s" % ("static" if "MT" in str(self.settings.compiler.runtime) else "shared"))
@@ -609,15 +635,31 @@ class BoostConan(ConanFile):
 
         contents = ""
         if self.zip_bzip2_requires_needed:
-            contents = "\nusing zlib : 1.2.11 : <include>%s <search>%s <name>%s ;" % (
-                self.deps_cpp_info["zlib"].include_paths[0].replace('\\', '/'),
-                self.deps_cpp_info["zlib"].lib_paths[0].replace('\\', '/'),
-                self.deps_cpp_info["zlib"].libs[0])
+            def create_library_config(name):
+                reference = str(self.requires[name])
+                version_name = reference.split("@")[0]
+                version = version_name.split("/")[1]
+                includedir = self.deps_cpp_info[name].include_paths[0].replace('\\', '/')
+                libdir = self.deps_cpp_info[name].lib_paths[0].replace('\\', '/')
+                lib = self.deps_cpp_info[name].libs[0]
+                return "\nusing {name} : {version} : " \
+                       "<include>{includedir} " \
+                       "<search>{libdir} " \
+                       "<name>{lib} ;".format(name=name,
+                                              version=version,
+                                              includedir=includedir,
+                                              libdir=libdir,
+                                              lib=lib)
 
-            contents += "\nusing bzip2 : 1.0.6 : <include>%s <search>%s <name>%s ;" % (
-                self.deps_cpp_info["bzip2"].include_paths[0].replace('\\', '/'),
-                self.deps_cpp_info["bzip2"].lib_paths[0].replace('\\', '/'),
-                self.deps_cpp_info["bzip2"].libs[0])
+            contents = ""
+            if self.options.zlib:
+                contents += create_library_config("zlib")
+            if self.options.bzip2:
+                contents += create_library_config("bzip2")
+            if self.options.lzma:
+                contents += create_library_config("lzma")
+            if self.options.zstd:
+                contents += create_library_config("zstd")
 
         if not self.options.without_python:
             # https://www.boost.org/doc/libs/1_69_0/libs/python/doc/html/building/configuring_boost_build.html
