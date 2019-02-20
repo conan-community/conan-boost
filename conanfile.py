@@ -405,10 +405,14 @@ class BoostConan(ConanFile):
             with tools.vcvars(self.settings) if self.settings.compiler == "Visual Studio" else tools.no_op():
                 self.output.info("Using %s %s" % (self.settings.compiler, self.settings.compiler.version))
                 with tools.chdir(folder):
-                    option = "" if tools.os_info.is_windows else "-with-toolset="
-                    cmd = "%s %s%s" % (bootstrap, option, self._get_boostrap_toolset())
+                    if tools.cross_building(self.settings):
+                        cmd = bootstrap
+                    else:
+                        option = "" if tools.os_info.is_windows else "-with-toolset="
+                        cmd = "%s %s%s" % (bootstrap, option, self._get_boostrap_toolset())
                     self.output.info(cmd)
                     self.run(cmd)
+
         except Exception as exc:
             self.output.warn(str(exc))
             if os.path.exists(os.path.join(folder, "bootstrap.log")):
