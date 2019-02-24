@@ -738,6 +738,9 @@ class BoostConan(ConanFile):
         if tools.os_info.is_windows:
             return ""
 
+        if tools.os_info.is_macos:
+            return "darwin"
+
         with_toolset = {"apple-clang": "darwin"}.get(str(self.settings.compiler),
                                                      str(self.settings.compiler))
 
