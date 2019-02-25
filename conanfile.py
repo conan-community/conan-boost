@@ -721,11 +721,13 @@ class BoostConan(ConanFile):
             else:
                 executable = ""
             return compiler, compiler_version[0], executable
+        elif self.settings.compiler == "apple-clang":
+            return "clang-darwin", compiler_version, self._cxx
+        elif self.settings.os == "Android" and self.settings.compiler == "clang":
+            return "clang-linux", compiler_version, self._cxx
         elif str(self.settings.compiler) in ["clang", "gcc"]:
             # For GCC < v5 and Clang we need to provide the entire version string
             return compiler, compiler_version, ""
-        elif self.settings.compiler == "apple-clang":
-            return "clang-darwin", compiler_version, self._cxx
         elif self.settings.compiler == "sun-cc":
             return "sunpro", compiler_version, ""
         else:
@@ -756,12 +758,15 @@ class BoostConan(ConanFile):
         try:
             bootstrap = "bootstrap.bat" if tools.os_info.is_windows else "./bootstrap.sh"
             with tools.vcvars(self.settings) if self._is_msvc else tools.no_op():
-                self.output.info("Using %s %s" % (self.settings.compiler, self.settings.compiler.version))
                 with tools.chdir(folder):
-                    option = "" if tools.os_info.is_windows else "-with-toolset="
-                    cmd = "%s %s%s" % (bootstrap, option, self._get_boostrap_toolset())
+                    if tools.cross_building(self.settings):
+                        cmd = bootstrap
+                    else:
+                        option = "" if tools.os_info.is_windows else "-with-toolset="
+                        cmd = "%s %s%s" % (bootstrap, option, self._get_boostrap_toolset())
                     self.output.info(cmd)
                     self.run(cmd)
+
         except Exception as exc:
             self.output.warn(str(exc))
             if os.path.exists(os.path.join(folder, "bootstrap.log")):
