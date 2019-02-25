@@ -130,6 +130,8 @@ class BoostConan(ConanFile):
         tools.get(url, sha256=sha256)
 
         tools.patch(base_path=os.path.join(self.source_folder, self.folder_name),
+                    patch_file='patches/static_object_init.patch', strip=1)
+        tools.patch(base_path=os.path.join(self.source_folder, self.folder_name),
                     patch_file='patches/python_base_prefix.patch', strip=1)
         tools.patch(base_path=os.path.join(self.source_folder, self.folder_name),
                     patch_file='patches/boost_build_asmflags.patch', strip=1)
