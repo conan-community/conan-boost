@@ -1,7 +1,6 @@
-diff --git a/include/boost/python/detail/caller.hpp b/include/boost/python/detail/caller.hpp
-index 1bd30bfb5..a2fc08ed6 100644
---- a/include/boost/python/detail/caller.hpp
-+++ b/include/boost/python/detail/caller.hpp
+diff --ru a/boost/python/detail/caller.hpp b/boost/python/detail/caller.hpp
+--- a/boost/python/detail/caller.hpp
++++ b/boost/python/detail/caller.hpp
 @@ -109,6 +109,21 @@ struct converter_target_type <void_result_to_python >
          return 0;
      }
