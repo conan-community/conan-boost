@@ -110,6 +110,7 @@ class BoostConan(ConanFile):
     def package_id(self):
         if self.options.header_only:
             self.info.header_only()
+            self.info.options.header_only = True
         else:
             del self.info.options.python_executable  # PATH to the interpreter is not important, only version matters
             if self.options.without_python:
