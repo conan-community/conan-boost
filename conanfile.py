@@ -80,7 +80,7 @@ class BoostConan(ConanFile):
     short_paths = True
     no_copy_source = True
 
-    exports = ['patches/*']
+    exports_sources = ['patches/*']
 
     _bcp_dir = "custom-boost"
 
@@ -130,12 +130,10 @@ class BoostConan(ConanFile):
         url = "https://dl.bintray.com/boostorg/release/%s/source/%s" % (self.version, zip_name)
         tools.get(url, sha256=sha256)
 
-        tools.patch(base_path=os.path.join(self.source_folder, self.folder_name),
-                    patch_file='patches/static_object_init.patch', strip=1)
-        tools.patch(base_path=os.path.join(self.source_folder, self.folder_name),
-                    patch_file='patches/python_base_prefix.patch', strip=1)
-        tools.patch(base_path=os.path.join(self.source_folder, self.folder_name),
-                    patch_file='patches/boost_build_asmflags.patch', strip=1)
+        for patch in ["static_object_init.patch", "python_base_prefix.patch", "boost_build_asmflags.patch"]:
+            tools.patch(patch_file=os.path.join("patches", patch),
+                        base_path=os.path.join(self.source_folder, self.folder_name))
+
 
     ##################### BUILDING METHODS ###########################
 
