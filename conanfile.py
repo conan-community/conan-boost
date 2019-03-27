@@ -611,7 +611,7 @@ class BoostConan(ConanFile):
     def _ar(self):
         if "AR" in os.environ:
             return os.environ["AR"]
-        if tools.is_apple_os(self.settings.os):
+        if tools.is_apple_os(self.settings.os) and self.settings.compiler == "apple-clang":
             return tools.XCRun(self.settings).ar
         return None
 
@@ -619,7 +619,7 @@ class BoostConan(ConanFile):
     def _ranlib(self):
         if "RANLIB" in os.environ:
             return os.environ["RANLIB"]
-        if tools.is_apple_os(self.settings.os):
+        if tools.is_apple_os(self.settings.os) and self.settings.compiler == "apple-clang":
             return tools.XCRun(self.settings).ranlib
         return None
 
@@ -627,7 +627,7 @@ class BoostConan(ConanFile):
     def _cxx(self):
         if "CXX" in os.environ:
             return os.environ["CXX"]
-        if tools.is_apple_os(self.settings.os):
+        if tools.is_apple_os(self.settings.os) and self.settings.compiler == "apple-clang":
             return tools.XCRun(self.settings).cxx
         return None
 
