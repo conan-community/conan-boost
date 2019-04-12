@@ -26,7 +26,7 @@ lib_list = ['math', 'wave', 'container', 'contract', 'exception', 'graph', 'iost
 
 class BoostConan(ConanFile):
     name = "boost"
-    version = "1.69.0"
+    version = "1.70.0"
     settings = "os", "arch", "compiler", "build_type", "cppstd"
     folder_name = "boost_%s" % version.replace(".", "_")
     description = "Boost provides free peer-reviewed portable C++ source libraries"
@@ -120,17 +120,17 @@ class BoostConan(ConanFile):
 
     def source(self):
         if tools.os_info.is_windows:
-            sha256 = "d074bcbcc0501c4917b965fc890e303ee70d8b01ff5712bae4a6c54f2b6b4e52"
+            sha256 = "48f379b2e90dd1084429aae87d6bdbde9670139fa7569ee856c8c86dd366039d"
             extension = ".zip"
         else:
-            sha256 = "9a2c2819310839ea373f42d69e733c339b4e9a19deab6bfec448281554aa4dbb"
-            extension = ".tar.gz"
+            sha256 = "430ae8354789de4fd19ee52f3b1f739e1fba576f0aded0897c3c2bc00fb38778"
+            extension = ".tar.bz2"
 
         zip_name = "%s%s" % (self.folder_name, extension)
         url = "https://dl.bintray.com/boostorg/release/%s/source/%s" % (self.version, zip_name)
         tools.get(url, sha256=sha256)
 
-        for patch in ["static_object_init.patch", "python_base_prefix.patch", "boost_build_asmflags.patch"]:
+        for patch in ["python_base_prefix.patch", "boost_build_asmflags.patch"]:
             tools.patch(patch_file=os.path.join("patches", patch),
                         base_path=os.path.join(self.source_folder, self.folder_name))
 
@@ -483,7 +483,7 @@ class BoostConan(ConanFile):
         else:
             flags = []
 
-        # https://www.boost.org/doc/libs/1_69_0/libs/context/doc/html/context/architectures.html
+        # https://www.boost.org/doc/libs/1_70_0/libs/context/doc/html/context/architectures.html
         if self._b2_os:
             flags.append("target-os=%s" % self._b2_os)
         if self._b2_architecture:
@@ -666,7 +666,7 @@ class BoostConan(ConanFile):
                 contents += create_library_config("zstd")
 
         if not self.options.without_python:
-            # https://www.boost.org/doc/libs/1_69_0/libs/python/doc/html/building/configuring_boost_build.html
+            # https://www.boost.org/doc/libs/1_70_0/libs/python/doc/html/building/configuring_boost_build.html
             contents += "\nusing python : {version} : {executable} : {includes} :  {libraries} ;"\
                 .format(version=self._python_version,
                         executable=self._python_executable,
