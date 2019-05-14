@@ -678,7 +678,7 @@ class BoostConan(ConanFile):
 
         # Specify here the toolset with the binary if present if don't empty parameter : :
         contents += '\nusing "%s" : "%s" : ' % (toolset, version)
-        contents += ' "%s"' % exe.replace("\\", "/")
+        contents += ' %s' % exe.replace("\\", "/")
 
         if tools.is_apple_os(self.settings.os):
             contents += " -isysroot %s" % tools.XCRun(self.settings).sdk_path
