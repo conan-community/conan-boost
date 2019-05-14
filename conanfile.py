@@ -720,7 +720,7 @@ class BoostConan(ConanFile):
             if not tools.which("g++-%s" % compiler_version[0]):
                 # In fedora 24, 25 the gcc is 6, but there is no g++-6 and the detection is 6.3.1
                 # so b2 fails because 6 != 6.3.1. Specify the exe to avoid the smart detection
-                executable = tools.which("g++")
+                executable = tools.which("g++") or ""
             else:
                 executable = ""
             return compiler, compiler_version[0], executable
