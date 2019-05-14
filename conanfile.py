@@ -712,6 +712,8 @@ class BoostConan(ConanFile):
             cversion = self.settings.compiler.version
             _msvc_version = "14.1" if Version(str(cversion)) >= "15" else "%s.0" % cversion
             return "msvc", _msvc_version, ""
+        elif self.settings.os == "Windows" and self.settings.compiler == "clang":
+            return "clang-win", compiler_version, ""
         elif self.settings.compiler == "gcc" and tools.is_apple_os(self.settings.os):
             return "darwin", compiler_version, self._cxx
         elif compiler == "gcc" and compiler_version[0] >= "5":
