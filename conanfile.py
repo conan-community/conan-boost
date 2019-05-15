@@ -681,7 +681,8 @@ class BoostConan(ConanFile):
         contents += ' "%s"' % exe.replace("\\", "/")
 
         if tools.is_apple_os(self.settings.os):
-            contents += " -isysroot %s" % tools.XCRun(self.settings).sdk_path
+            if self.settings.compiler == "apple-clang":
+                contents += " -isysroot %s" % tools.XCRun(self.settings).sdk_path
             if self.settings.get_safe("arch"):
                 contents += " -arch %s" % tools.to_apple_arch(self.settings.arch)
 
