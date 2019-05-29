@@ -17,6 +17,8 @@ class DefaultNameConan(ConanFile):
         cmake = CMake(self)
         if self.options["boost"].header_only:
             cmake.definitions["HEADER_ONLY"] = "TRUE"
+        else:
+            cmake.definitions["Boost_USE_STATIC_LIBS"] = not self.options["boost"].shared
         if self.options["boost"].python:
             cmake.definitions["WITH_PYTHON"] = "TRUE"
 

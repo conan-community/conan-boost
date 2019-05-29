@@ -829,8 +829,6 @@ class BoostConan(ConanFile):
 
         if not self.options.header_only and self.options.shared:
             self.cpp_info.defines.append("BOOST_ALL_DYN_LINK")
-        else:
-            self.cpp_info.defines.append("BOOST_USE_STATIC_LIBS")
 
         if self.options.system_no_deprecated:
             self.cpp_info.defines.append("BOOST_SYSTEM_NO_DEPRECATED")
