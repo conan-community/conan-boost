@@ -563,7 +563,7 @@ class BoostConan(ConanFile):
         if self.settings.os != "Android":
             try:
                 if self._gnu_cxx11_abi:
-                    self.cpp_info.defines.append("define=_GLIBCXX_USE_CXX11_ABI=%s" % self._gnu_cxx11_abi)
+                    flags.append("define=_GLIBCXX_USE_CXX11_ABI=%s" % self._gnu_cxx11_abi)
 
                 if "clang" in str(self.settings.compiler):
                     if str(self.settings.compiler.libcxx) == "libc++":
