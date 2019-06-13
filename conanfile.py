@@ -482,12 +482,14 @@ class BoostConan(ConanFile):
         _GLIBCXX_USE_CXX11_ABI= .  Returns None if C++ library cannot be
         determined.
         """
-        if str(self.settings.compiler.libcxx) == "libstdc++":
-            return "0"
-        elif str(self.settings.compiler.libcxx) == "libstdc++11":
-            return "1"
-        else:
-            return None
+        try:
+            if str(self.settings.compiler.libcxx) == "libstdc++":
+                return "0"
+            elif str(self.settings.compiler.libcxx) == "libstdc++11":
+                return "1"
+        except:
+            pass
+        return None
 
     def get_build_flags(self):
 
