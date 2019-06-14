@@ -106,3 +106,4 @@ install:
 
 test_script:
   - python build.py
+  - type C:/projects/conan-boost/trace.log
