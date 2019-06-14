@@ -15,6 +15,26 @@ environment:
     CONAN_UPLOAD_ONLY_WHEN_STABLE: 1 # Will only upload when the branch matches "release/*"
 
     matrix:
+        - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
+          CONAN_VISUAL_VERSIONS: 16
+          CONAN_CURRENT_PAGE: 1
+          CONAN_TOTAL_PAGES: 5
+        - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
+          CONAN_VISUAL_VERSIONS: 16
+          CONAN_CURRENT_PAGE: 2
+          CONAN_TOTAL_PAGES: 5
+        - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
+          CONAN_VISUAL_VERSIONS: 16
+          CONAN_CURRENT_PAGE: 3
+          CONAN_TOTAL_PAGES: 5
+        - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
+          CONAN_VISUAL_VERSIONS: 16
+          CONAN_CURRENT_PAGE: 4
+          CONAN_TOTAL_PAGES: 5
+        - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
+          CONAN_VISUAL_VERSIONS: 16
+          CONAN_CURRENT_PAGE: 5
+          CONAN_TOTAL_PAGES: 5
 
         - MINGW_CONFIGURATIONS: "6@x86_64@seh@posix"
           CONAN_BASH_PATH: "c:\\msys64\\usr\\bin\\bash"
