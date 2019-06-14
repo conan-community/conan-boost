@@ -105,5 +105,5 @@ install:
   - conan user # It creates the conan data directory
 
 test_script:
-  - python build.py
+  - python build.py || true
   - type C:/projects/conan-boost/trace.log
