@@ -476,6 +476,21 @@ class BoostConan(ConanFile):
         else:
             return None
 
+    @property
+    def _gnu_cxx11_abi(self):
+        """Checks libcxx setting and returns value for the GNU C++11 ABI flag
+        _GLIBCXX_USE_CXX11_ABI= .  Returns None if C++ library cannot be
+        determined.
+        """
+        try:
+            if str(self.settings.compiler.libcxx) == "libstdc++":
+                return "0"
+            elif str(self.settings.compiler.libcxx) == "libstdc++11":
+                return "1"
+        except:
+            pass
+        return None
+
     def get_build_flags(self):
 
         if tools.cross_building(self.settings):
@@ -549,10 +564,9 @@ class BoostConan(ConanFile):
         # Standalone toolchain fails when declare the std lib
         if self.settings.os != "Android":
             try:
-                if str(self.settings.compiler.libcxx) == "libstdc++":
-                    flags.append("define=_GLIBCXX_USE_CXX11_ABI=0")
-                elif str(self.settings.compiler.libcxx) == "libstdc++11":
-                    flags.append("define=_GLIBCXX_USE_CXX11_ABI=1")
+                if self._gnu_cxx11_abi:
+                    flags.append("define=_GLIBCXX_USE_CXX11_ABI=%s" % self._gnu_cxx11_abi)
+
                 if "clang" in str(self.settings.compiler):
                     if str(self.settings.compiler.libcxx) == "libc++":
                         cxx_flags.append("-stdlib=libc++")
@@ -839,6 +853,10 @@ class BoostConan(ConanFile):
 
         if self.options.filesystem_no_deprecated:
             self.cpp_info.defines.append("BOOST_FILESYSTEM_NO_DEPRECATED")
+
+        if self.settings.os != "Android":
+            if self._gnu_cxx11_abi:
+                self.cpp_info.defines.append("_GLIBCXX_USE_CXX11_ABI=%s" % self._gnu_cxx11_abi)
 
         if not self.options.header_only:
             if self.options.error_code_header_only:
