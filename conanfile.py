@@ -130,7 +130,8 @@ class BoostConan(ConanFile):
         url = "https://dl.bintray.com/boostorg/release/%s/source/%s" % (self.version, zip_name)
         tools.get(url, sha256=sha256)
 
-        for patch in ["python_base_prefix.patch"]:
+        for patch in ["python_base_prefix.patch",
+                      "bcp_namespace_issues.patch"]:
             tools.patch(patch_file=os.path.join("patches", patch),
                         base_path=os.path.join(self.source_folder, self.folder_name))
 
