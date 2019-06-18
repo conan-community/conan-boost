@@ -363,7 +363,7 @@ class BoostConan(ConanFile):
                 namespace = "--namespace=%s" % self.options.namespace
                 alias = "--namespace-alias" if self.options.namespace_alias else ""
                 boostdir = "--boost=%s" % self.folder_name
-                libraries = {"build", "boost-build.jam", "boostcpp.jam"}
+                libraries = {"build", "boost-build.jam", "boostcpp.jam", "boost-install", "headers"}
                 for d in os.listdir(os.path.join(self.folder_name, "boost")):
                     if os.path.isdir(os.path.join(self.folder_name, "boost", d)):
                         libraries.add(d)
