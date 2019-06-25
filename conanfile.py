@@ -131,8 +131,10 @@ class BoostConan(ConanFile):
         tools.get(url, sha256=sha256)
 
         for patch in ["0001-beast-fix-moved-from-executor.patch",
-                      "python_base_prefix.patch",
-                      "bcp_namespace_issues.patch"]:
+                      "bcp_namespace_issues.patch",
+                      "boost_build_qcc_fix_debug_build_parameter.patch",
+                      "boost_core_qnx_cxx_provide___cxa_get_globals.patch",
+                      "python_base_prefix.patch"]:
             tools.patch(patch_file=os.path.join("patches", patch),
                         base_path=os.path.join(self.source_folder, self.folder_name))
 
