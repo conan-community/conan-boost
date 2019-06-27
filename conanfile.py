@@ -97,6 +97,9 @@ class BoostConan(ConanFile):
         return not self.options.without_iostreams and not self.options.header_only
 
     def configure(self):
+        pass
+
+    def requirements(self):
         if self.zip_bzip2_requires_needed:
             if self.options.zlib:
                 self.requires("zlib/1.2.11@conan/stable")
