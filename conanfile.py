@@ -621,6 +621,8 @@ class BoostConan(ConanFile):
             pass
         elif arch.startswith("ppc"):
             pass
+        elif arch.startswith("mips"):
+            pass
         else:
             raise Exception("I'm so sorry! I don't know the appropriate ABI for "
                             "your architecture. :'(")
