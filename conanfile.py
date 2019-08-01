@@ -818,10 +818,6 @@ class BoostConan(ConanFile):
         self.copy(pattern="*.lib", dst="lib", src=out_lib_dir, keep_path=False)
         self.copy(pattern="*.dll", dst="bin", src=out_lib_dir, keep_path=False)
 
-        # When first call with source do not package anything
-        if not os.path.exists(os.path.join(self.package_folder, "lib")):
-            return
-
     def package_info(self):
         gen_libs = [] if self.options.header_only else tools.collect_libs(self)
 
