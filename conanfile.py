@@ -50,7 +50,8 @@ class BoostConan(ConanFile):
         "bzip2": [True, False],
         "lzma": [True, False],
         "zstd": [True, False],
-        "segmented_stacks": [True, False]
+        "segmented_stacks": [True, False],
+        "extra_b2_flags": "ANY"  # custom b2 flags
     }
     options.update({"without_%s" % libname: [True, False] for libname in lib_list})
 
@@ -71,7 +72,8 @@ class BoostConan(ConanFile):
                        "bzip2=True",
                        "lzma=False",
                        "zstd=False",
-                       "segmented_stacks=False"]
+                       "segmented_stacks=False",
+                       "extra_b2_flags=None"]
 
     default_options.extend(["without_%s=False" % libname for libname in lib_list if libname != "python"])
     default_options.append("without_python=True")
@@ -612,6 +614,9 @@ class BoostConan(ConanFile):
 
         cxx_flags = 'cxxflags="%s"' % " ".join(cxx_flags) if cxx_flags else ""
         flags.append(cxx_flags)
+
+        if self.options.extra_b2_flags:
+            flags.append(str(self.options.extra_b2_flags))
 
         return flags
 
