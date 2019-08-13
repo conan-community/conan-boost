@@ -49,7 +49,8 @@ class BoostConan(ConanFile):
         "zlib": [True, False],
         "bzip2": [True, False],
         "lzma": [True, False],
-        "zstd": [True, False]
+        "zstd": [True, False],
+        "segmented_stacks": [True, False]
     }
     options.update({"without_%s" % libname: [True, False] for libname in lib_list})
 
@@ -69,7 +70,8 @@ class BoostConan(ConanFile):
                        "zlib=True",
                        "bzip2=True",
                        "lzma=False",
-                       "zstd=False"]
+                       "zstd=False",
+                       "segmented_stacks=False"]
 
     default_options.extend(["without_%s=False" % libname for libname in lib_list if libname != "python"])
     default_options.append("without_python=True")
@@ -591,6 +593,10 @@ class BoostConan(ConanFile):
             flags.append("define=BOOST_ASIO_NO_DEPRECATED=1")
         if self.options.filesystem_no_deprecated:
             flags.append("define=BOOST_FILESYSTEM_NO_DEPRECATED=1")
+        if self.options.segmented_stacks:
+            flags.extend(["segmented-stacks=on",
+                          "define=BOOST_USE_SEGMENTED_STACKS=1",
+                          "define=BOOST_USE_UCONTEXT=1"])
 
         if tools.is_apple_os(self.settings.os):
             if self.settings.get_safe("os.version"):
@@ -856,6 +862,9 @@ class BoostConan(ConanFile):
 
         if self.options.filesystem_no_deprecated:
             self.cpp_info.defines.append("BOOST_FILESYSTEM_NO_DEPRECATED")
+
+        if self.options.segmented_stacks:
+            self.cpp_info.defines.extend(["BOOST_USE_SEGMENTED_STACKS", "BOOST_USE_UCONTEXT"])
 
         if self.settings.os != "Android":
             if self._gnu_cxx11_abi:
