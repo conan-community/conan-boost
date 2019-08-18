@@ -108,7 +108,7 @@ class BoostConan(ConanFile):
             if self.options.zlib:
                 self.requires("zlib/1.2.11@conan/stable")
             if self.options.bzip2:
-                self.requires("bzip2/1.0.6@conan/stable")
+                self.requires("bzip2/1.0.8@conan/stable")
             if self.options.lzma:
                 self.requires("lzma/5.2.4@bincrafters/stable")
             if self.options.zstd:
