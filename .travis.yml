@@ -1,6 +1,6 @@
 env:
    global:
-     - CONAN_REFERENCE: "boost/1.70.0"
+     - CONAN_REFERENCE: "boost/1.71.0"
      - CONAN_USERNAME: "conan"
      - CONAN_LOGIN_USERNAME: "conanbot"
      - CONAN_CHANNEL: "testing"

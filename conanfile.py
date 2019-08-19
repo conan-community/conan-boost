@@ -26,7 +26,7 @@ lib_list = ['math', 'wave', 'container', 'contract', 'exception', 'graph', 'iost
 
 class BoostConan(ConanFile):
     name = "boost"
-    version = "1.70.0"
+    version = "1.71.0"
     settings = "os", "arch", "compiler", "build_type"
     folder_name = "boost_%s" % version.replace(".", "_")
     description = "Boost provides free peer-reviewed portable C++ source libraries"
@@ -127,18 +127,17 @@ class BoostConan(ConanFile):
 
     def source(self):
         if tools.os_info.is_windows:
-            sha256 = "48f379b2e90dd1084429aae87d6bdbde9670139fa7569ee856c8c86dd366039d"
+            sha256 = "85a94ac71c28e59cf97a96714e4c58a18550c227ac8b0388c260d6c717e47a69"
             extension = ".zip"
         else:
-            sha256 = "430ae8354789de4fd19ee52f3b1f739e1fba576f0aded0897c3c2bc00fb38778"
+            sha256 = "d73a8da01e8bf8c7eda40b4c84915071a8c8a0df4a6734537ddde4a8580524ee"
             extension = ".tar.bz2"
 
         zip_name = "%s%s" % (self.folder_name, extension)
         url = "https://dl.bintray.com/boostorg/release/%s/source/%s" % (self.version, zip_name)
         tools.get(url, sha256=sha256)
 
-        for patch in ["0001-beast-fix-moved-from-executor.patch",
-                      "bcp_namespace_issues.patch",
+        for patch in ["bcp_namespace_issues.patch",
                       "boost_build_qcc_fix_debug_build_parameter.patch",
                       "boost_core_qnx_cxx_provide___cxa_get_globals.patch",
                       "python_base_prefix.patch"]:
