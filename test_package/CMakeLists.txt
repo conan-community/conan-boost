@@ -33,7 +33,7 @@ IF(NOT HEADER_ONLY)
 
 endif()
 
-function( target_link_to_icu target )
+macro( target_link_to_icu target )
 
     if(NOT ICU_FOUND)
         set(ICU_DEBUG 1)
@@ -42,7 +42,10 @@ function( target_link_to_icu target )
     endif()
 
     target_include_directories( ${target} PUBLIC ${ICU_INCLUDE_DIRS} )
-    if( ( NOT ICU_USE_STATIC_LIBS ) OR Boost_USE_STATIC_LIBS )
+
+    if( ( NOT ICU_USE_STATIC_LIBS )
+	OR Boost_USE_STATIC_LIBS
+	OR APPLE )
         target_link_libraries( ${target} PUBLIC ${ICU_LIBRARIES} )
     endif()
 
@@ -52,7 +55,7 @@ function( target_link_to_icu target )
         target_link_libraries( ${target} PUBLIC dl )
     endif()
 
-endfunction()
+endmacro()
 
 
 add_executable(lambda lambda.cpp)
