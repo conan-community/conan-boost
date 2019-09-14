@@ -50,6 +50,7 @@ class BoostConan(ConanFile):
         "bzip2": [True, False],
         "lzma": [True, False],
         "zstd": [True, False],
+        "use_icu": [True, False],  # use ICU in boost (locale and regex)
         "segmented_stacks": [True, False],
         "extra_b2_flags": "ANY"  # custom b2 flags
     }
@@ -72,6 +73,7 @@ class BoostConan(ConanFile):
                        "bzip2=True",
                        "lzma=False",
                        "zstd=False",
+                       "use_icu=False",
                        "segmented_stacks=False",
                        "extra_b2_flags=None"]
 
@@ -100,6 +102,14 @@ class BoostConan(ConanFile):
     def zip_bzip2_requires_needed(self):
         return not self.options.without_iostreams and not self.options.header_only
 
+    @property
+    def icu_requires_needed(self):
+        if self.options.without_locale and self.options.without_regex:
+            return False
+        if self.options.header_only:
+            return False
+        return self.options.use_icu
+
     def configure(self):
         pass
 
@@ -113,6 +123,9 @@ class BoostConan(ConanFile):
                 self.requires("lzma/5.2.4@bincrafters/stable")
             if self.options.zstd:
                 self.requires("zstd/1.3.5@bincrafters/stable")
+        if  self.icu_requires_needed:
+            self.requires("icu/64.2@bincrafters/stable")
+
 
     def package_id(self):
         if self.options.header_only:
@@ -140,10 +153,12 @@ class BoostConan(ConanFile):
         for patch in ["bcp_namespace_issues.patch",
                       "boost_build_qcc_fix_debug_build_parameter.patch",
                       "boost_core_qnx_cxx_provide___cxa_get_globals.patch",
-                      "python_base_prefix.patch"]:
+                      "python_base_prefix.patch",
+                      "boost_build_configure_relevant.patch",
+                      "boost_locale_build_with_icu.patch",
+                      "boost_regex_build_with_icu.patch"]:
             tools.patch(patch_file=os.path.join("patches", patch),
                         base_path=os.path.join(self.source_folder, self.folder_name))
-
 
     ##################### BUILDING METHODS ###########################
 
@@ -421,7 +436,7 @@ class BoostConan(ConanFile):
                 with tools.environment_append({"BOOST_BUILD_PATH": self._boost_build_dir}):
                     # To show the libraries *1
                     # self.run("%s --show-libraries" % b2_exe)
-                    self.run(full_command)
+                    self.run(full_command, run_environment=True)
 
     @property
     def _b2_os(self):
@@ -613,6 +628,19 @@ class BoostConan(ConanFile):
 
         cxx_flags = 'cxxflags="%s"' % " ".join(cxx_flags) if cxx_flags else ""
         flags.append(cxx_flags)
+
+
+        if self.icu_requires_needed:
+            icu_root_dir=self.deps_cpp_info["icu"].rootpath
+            flags.append( "-sICU_PATH=%s" % icu_root_dir )
+            if self.options["icu"].shared == False:
+                flags.append( "-sICU_LINK_TYPE=static" )
+
+        if not self.options.without_locale:
+            if self.icu_requires_needed:
+                flags.append( "boost.locale.icu=on" )
+            else:
+                flags.append( "boost.locale.icu=off" )
 
         if self.options.extra_b2_flags:
             flags.append(str(self.options.extra_b2_flags))
