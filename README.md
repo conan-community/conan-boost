@@ -1,3 +1,5 @@
+**OBSOLETE** The recipe is now in https://github.com/conan-io/conan-center-index
+
 [![Download](https://api.bintray.com/packages/conan-community/conan/boost%3Aconan/images/download.svg) ](https://bintray.com/conan-community/conan/boost%3Aconan/_latestVersion)
 [![Build Status Travis](https://travis-ci.org/conan-community/conan-boost.svg)](https://travis-ci.org/conan-community/conan-boost)
 [![Build Status AppVeyor](https://ci.appveyor.com/api/projects/status/github/conan-community/conan-boost?svg=true)](https://ci.appveyor.com/project/ConanCIintegration/conan-boost)
